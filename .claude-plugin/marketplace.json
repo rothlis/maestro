@@ -1,6 +1,6 @@
 {
-  "name": "rothlis",
-  "owner": { "name": "Sebastien Rothlisberger" },
+  "name": "vascohq",
+  "owner": { "name": "vascohq" },
   "plugins": [
     {
       "name": "maestro",

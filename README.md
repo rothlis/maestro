@@ -53,7 +53,7 @@ The review checks your code against blueprints, short markdown files that say wh
 
 ```
 /plugin marketplace add rothlis/maestro
-/plugin install maestro@rothlis
+/plugin install maestro@vascohq
 ```
 
 You need `gh` (2.100 or later, for `--parent`), signed in to your repository, and Node 20 or later.
