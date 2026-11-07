@@ -1,0 +1,23 @@
+{
+  "surfaces": [
+    {
+      "id": "api",
+      "blueprint": ".maestro/blueprints/api/README.md",
+      "owner": "api-lead-handle",
+      "reviewTeam": "your-org/api-team",
+      "reviewRisk": ".maestro/blueprints/api/review-risk.md",
+      "paths": ["services/api/"],
+      "rootOnly": true
+    },
+    {
+      "id": "web",
+      "blueprint": ".maestro/blueprints/web/README.md",
+      "owner": "web-lead-handle",
+      "reviewTeam": "your-org/web-team",
+      "paths": ["apps/web/"],
+      "rootOnly": true
+    }
+  ],
+  "uncovered": ["scripts/"],
+  "uncoveredReviewTeams": {}
+}

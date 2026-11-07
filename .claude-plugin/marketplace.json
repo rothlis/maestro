@@ -1,0 +1,11 @@
+{
+  "name": "rothlis",
+  "owner": { "name": "Sebastien Rothlisberger" },
+  "plugins": [
+    {
+      "name": "maestro",
+      "source": "./",
+      "description": "Shape Up below the pitch, as a tree of GitHub issues, with a multi-pass code review."
+    }
+  ]
+}

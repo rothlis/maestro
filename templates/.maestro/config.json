@@ -1,0 +1,27 @@
+{
+  "$comment": "Maestro settings for this repository. The file is optional, and each field you leave out takes the default shown here. A key that starts with $ is a comment.",
+  "baseBranch": "main",
+  "$baseBranch": "The branch pull requests merge into. Scripts measure against origin/<baseBranch>.",
+  "memoryDir": "docs/memory",
+  "$memoryDir": "The shared project memory: MEMORY.md is the index, one fact per file beside it.",
+  "blueprintMap": ".maestro/blueprints/map.json",
+  "$blueprintMap": "The map that ties paths to blueprints and review teams. With no map, the review runs its generic method and says that no blueprint was found.",
+  "prTemplate": ".github/pull_request_template.md",
+  "$prTemplate": "The pull request template that build and announce follow, when it exists.",
+  "cycle": {
+    "$comment": "The branch name of a task. <n> is the cycle or cooldown number, <slug> the kebab-case task.",
+    "branchPattern": "cycle-<n>/<slug>"
+  },
+  "announce": {
+    "$comment": "Where announce posts a ready pull request. Remove this block, and announce asks for a channel.",
+    "slackChannel": "#pull-requests"
+  },
+  "board": {
+    "$comment": "How sync pushes progress to your board, in free text: an MCP tool name, or a gh project command. Leave instructions empty, or remove this block, and sync writes progress to the pitch issue only.",
+    "instructions": ""
+  },
+  "prShape": {
+    "$comment": "Extra globs that the PR shape report leaves out of every count, on top of lock files, generated files and vendored archives. Example: docs/diagrams/**",
+    "exclude": []
+  }
+}
