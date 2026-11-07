@@ -69,7 +69,7 @@ describe("isExcluded", () => {
       "package.json",
       "services/api/db/schema.sql",
       "apps/web/src/modules/billing/InvoicePage.tsx",
-      "docs/memory/MEMORY.md",
+      "docs/guide.md",
       "docs/diagrams/context.svg",
     ]) {
       assert.equal(isExcluded(path), false, path)
@@ -106,7 +106,7 @@ describe("areaOf", () => {
       ["packages/ui/src/Button.tsx", "packages/ui"],
       ["src/main.go", "src"],
       [".circleci/config.yml", ".circleci"],
-      ["docs/memory/MEMORY.md", "docs"],
+      ["docs/guide.md", "docs"],
       ["package.json", "root"],
     ]) {
       assert.equal(areaOf(path), area, path)
@@ -364,7 +364,7 @@ describe("summarize", () => {
       "origin/main",
       files([
         [".circleci/config.yml", 30, "M"],
-        ["docs/memory/MEMORY.md", 4, "M"],
+        ["docs/guide.md", 4, "M"],
         ["package.json", 1, "M"],
       ]),
       [],

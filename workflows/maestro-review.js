@@ -3,7 +3,7 @@ export const meta = {
   description:
     "Review a pull request against the team's own blueprints — the single source of the review's passes, engines and criteria injection",
   whenToUse:
-    "Every maestro review runs through this script; the /maestro:maestro review skill is a front door onto it. Pass args.pluginRoot, the absolute path of the plugin. Call it as a phase of larger work with workflow('maestro:maestro-review', { pluginRoot, scope, base, effort }), or launch it directly. Subagents cannot nest, so an agent that has neither the Workflow tool nor the Agent tool must hand the review back to its caller instead of reviewing in one context. Never resume a run: a failed pass has no cached result, so a resume re-runs it and every agent after it.",
+    "Every maestro review runs through this script; the /maestro:maestro review skill is a front door onto it. Pass args.pluginRoot, the absolute path of the plugin, and args.store with args.trackerInstructions from .maestro/config.json when the artifacts live in a tracker. Call it as a phase of larger work with workflow('maestro:maestro-review', { pluginRoot, scope, base, effort }), or launch it directly. Subagents cannot nest, so an agent that has neither the Workflow tool nor the Agent tool must hand the review back to its caller instead of reviewing in one context. Never resume a run: a failed pass has no cached result, so a resume re-runs it and every agent after it.",
   phases: [
     {
       title: "Route",
@@ -20,7 +20,7 @@ export const meta = {
     {
       title: "Review",
       detail:
-        "only the passes the diff gives work to: two reasoning engines, one checklist pass per touched surface, a design pass where a surface asks for one, and the spec pass when a task issue resolves",
+        "only the passes the diff gives work to: two reasoning engines, one checklist pass per touched surface, a design pass where a surface asks for one, and the spec pass when a task reference resolves",
     },
     {
       title: "Verify",
@@ -61,6 +61,15 @@ const STRONG_MODEL = "opus";
 // The caller reads `baseBranch` from `.maestro/config.json`, because a script cannot read files.
 const base = scopeArg.base || `origin/${scopeArg.baseBranch || "main"}`;
 const prBase = scopeArg.prBase || base;
+// The store holds the task and spec artifacts; pull requests stay on GitHub either way. The caller
+// reads `store` and `tracker.instructions` from `.maestro/config.json`.
+const STORE = scopeArg.store || "github";
+if (!["github", "tracker"].includes(STORE)) {
+  throw new Error(
+    `maestro-review: args.store is "${STORE}", and it must be "github" or "tracker". Fix \`store\` in .maestro/config.json. No review ran.`,
+  );
+}
+const TRACKER_INSTRUCTIONS = (scopeArg.trackerInstructions || "").trim();
 // A re-check reads only the changes since the last reviewed head.
 const isRecheck = scopeArg.recheck === true;
 const raisedFindingsPath = scopeArg.raisedFindings;
@@ -155,7 +164,12 @@ const SCOPE_SCHEMA = {
     },
     areTestsChanged: { type: "boolean" },
     areNewTypesAdded: { type: "boolean" },
-    taskIssues: { type: "array", items: { type: "number" } },
+    taskRefs: {
+      type: "array",
+      items: { type: "string" },
+      description:
+        "every task reference the pull request carries, as the store writes it: #12 on GitHub, ENG-123 on a tracker",
+    },
     diffSummary: { type: "string" },
   },
   required: [
@@ -165,7 +179,7 @@ const SCOPE_SCHEMA = {
     "other",
     "areTestsChanged",
     "areNewTypesAdded",
-    "taskIssues",
+    "taskRefs",
     "diffSummary",
   ],
 };
@@ -244,9 +258,13 @@ const SPEC_SCHEMA = {
       properties: {
         ran: {
           type: "boolean",
-          description: "false when the branch resolves to no requirement",
+          description:
+            "false when the branch resolves to no requirement, or the store cannot be read",
         },
-        specIssue: { type: "string" },
+        specRef: {
+          type: "string",
+          description: "the reference of the spec read, as the store writes it",
+        },
         requirementIds: {
           type: "array",
           items: { type: "string" },
@@ -433,6 +451,12 @@ if (!humanReview) {
 
 phase("Scope");
 
+// The store's **link PR** rule says how a pull request names its task.
+const taskRefsRule =
+  STORE === "github"
+    ? "taskRefs: the issues the pull request closes, each written as `#<n>`. Run `gh pr view --json closingIssuesReferences,body` and take them from `closingIssuesReferences`, or from the `Closes #<n>` lines of the body when that list is empty, because GitHub links them a few minutes late. Give an empty list when the branch has no pull request, or when its body has no such line."
+    : `taskRefs: every task reference the pull request carries, by the tracker's link PR rule, each written as the tracker writes it (such as \`ENG-123\`). Run \`gh pr view --json body,headRefName\` and \`git rev-parse --abbrev-ref HEAD\`. Take each reference from the lines of the body that the rule names, and from the branch name when it carries one: \`eng-123-add-banner\` gives \`ENG-123\`. ${TRACKER_INSTRUCTIONS ? `The tracker instructions state the rule:\n\n${TRACKER_INSTRUCTIONS}\n` : "No tracker instructions were given, so take references of the form `ABC-123` from the `Fixes`, `Closes` and `Resolves` lines of the body and from the branch name."} Do not call the tracker: read only the pull request and the branch. Give an empty list when neither carries a reference.`;
+
 const scope = await withOneRetry("scope:diff", () =>
   agent(
     `You are scoping a code review of the working diff in this repository.
@@ -453,7 +477,7 @@ The map holds a \`surfaces\` list. Each surface has an \`id\`, a \`blueprint\`, 
 
 Also report whether any test file changed (areTestsChanged) and whether the diff adds new exported types, interfaces or enums (areNewTypesAdded) — check the diff content for these two, not just filenames.
 
-taskIssues: the issue numbers the pull request closes. Run \`gh pr view --json closingIssuesReferences,body\` and take them from \`closingIssuesReferences\`, or from the \`Closes #<n>\` lines of the body when that list is empty, because GitHub links them a few minutes late. Give an empty list when the branch has no pull request, or when its body has no such line.
+${taskRefsRule}
 
 diffSummary: two or three sentences on what the diff does, for the reviewers downstream. Do not review anything yourself.
 isEmpty: true only when there is no changed file at all in scope.`,
@@ -724,17 +748,26 @@ ${hasBlueprints ? "No surface of the blueprint map covers them" : "The repositor
   });
 }
 
-if (scope.taskIssues.length > 0) {
-  passes.push({
-    key: "spec",
-    model: CHEAP_MODEL,
-    effort: EFFORT.checklist,
-    schema: SPEC_SCHEMA,
-    prompt: `${preambleFor(allFiles)}
+// The spec pass needs a task reference, and on a tracker it needs the instructions that name the MCP.
+const specSkip =
+  scope.taskRefs.length === 0
+    ? {
+        short: "the scope step resolved no task reference",
+        note:
+          STORE === "github"
+            ? "The scope step resolved no task reference: the branch has no pull request, or its body has no `Closes #<n>` line. The spec pass did not start."
+            : "The scope step resolved no task reference: neither the pull request body nor the branch name carries one by the tracker's link PR rule. The spec pass did not start.",
+      }
+    : STORE === "tracker" && !TRACKER_INSTRUCTIONS
+      ? {
+          short: "the store is tracker, and no tracker instructions were given",
+          note: `The store is tracker, and no tracker instructions were given, so the spec pass cannot tell which MCP holds ${scope.taskRefs.join(", ")} and its spec. Set \`tracker.instructions\` in .maestro/config.json. The spec pass did not start.`,
+        }
+      : null;
 
-Your pass is **the spec check**, and it is the only pass that reads outside the repository. You answer one question: **does this diff contradict a requirement it is supposed to satisfy?**
-
-Resolve the branch to its requirements. The chain is mechanical, so do not guess at any step:
+const specChain =
+  STORE === "github"
+    ? `The scope step found these task references: ${scope.taskRefs.join(", ")}. Resolve the branch to its requirements. The chain is mechanical, so do not guess at any step:
 
 \`\`\`bash
 gh pr view --json number,closingIssuesReferences,body
@@ -744,15 +777,44 @@ gh issue view <spec> --json body
 
 **An empty \`closingIssuesReferences\` on a recent pull request means "not yet", and not "none".** GitHub does not create that link synchronously, and it can take several minutes. Before you conclude the branch resolves to nothing, read the pull request body yourself and take the \`Closes #<n>\` line from it. Only a body with no such line puts the branch outside the flow.
 
-The pull request closes one or more task issues, which carry the \`maestro:task\` label. Each task issue names its spec issue and its requirement ids in the first line of its body, as \`**Spec**: #<n> · **Requirement**: <ID>\`. Read the spec issue, and read **only those requirements**, including the acceptance criteria and the notes inside their \`<details>\` blocks.
+The pull request closes one or more task issues, which carry the \`maestro:task\` label. Each task issue names its spec and its requirement ids in the first line of its body, in its \`**Spec**\` and \`**Requirements**\` fields. Read the spec issue, and read **only those requirements**, including the acceptance criteria and the notes inside their \`<details>\` blocks.`
+    : `The scope step found these task references: ${scope.taskRefs.join(", ")}. The task and its spec live in a tracker, and the pull request stays on GitHub. These tracker instructions say which MCP holds them and how each artifact maps:
+
+${TRACKER_INSTRUCTIONS}
+
+Resolve the branch to its requirements with that tracker's MCP tools. The chain is mechanical, so do not guess at any step:
+
+1. Find the tools: run ToolSearch with the tracker's name from the instructions, and load the tools that read an issue, a document or a project.
+2. Read each task: its title, body, status and parent.
+3. Find its spec. The first line of the task body names it in its \`**Spec**\` field. When the body has no such field, take the spec from the parent link that the instructions name, such as a sub-issue of its spec, a parent relation, or a \`Parent: <ref>\` line in the body.
+4. Read the spec, and read **only the requirements** that the task names in its \`**Requirements**\` field, including the acceptance criteria and the notes inside their \`<details>\` blocks.
+
+**Read only. Never create, update or close anything in the tracker.**`;
+
+const specUnresolved =
+  STORE === "github"
+    ? "no pull request yet, no `Closes` line, a closed issue without the `maestro:task` label, or a task issue that names none"
+    : "no tracker tool found because the tracker's MCP is not connected in this session, a reference the tracker does not know, a task with no spec, or a task that names no requirement";
+
+if (!specSkip) {
+  passes.push({
+    key: "spec",
+    model: CHEAP_MODEL,
+    effort: EFFORT.checklist,
+    schema: SPEC_SCHEMA,
+    prompt: `${preambleFor(allFiles)}
+
+Your pass is **the spec check**, and it is the only pass that reads outside the repository. You answer one question: **does this diff contradict a requirement it is supposed to satisfy?**
+
+${specChain}
 
 **A contradiction is a requirement the diff makes false**, not one it leaves unfinished. A criterion that is not yet met is ordinary work in progress and is never reported here. Report a requirement whose stated rule, formula, threshold, command or named behaviour the diff has changed, and a criterion that can no longer become true as written.
 
-For each one, give the requirement id, the claim it makes quoted from the issue, what the diff does instead, and the wording you would propose. **Propose the wording. Never edit the issue.**
+For each one, give the requirement id, the claim it makes quoted from the spec, what the diff does instead, and the wording you would propose. **Propose the wording. Never edit the task or the spec.** Set \`specRef\` to the reference of the spec you read.
 
 **Set \`requirementIds\` to every requirement you read, even when you find nothing.** A report that found nothing and a check that never ran look identical otherwise, and the second one is worthless.
 
-When the branch resolves to no requirement — no pull request yet, no \`Closes\` line, a closed issue without the \`maestro:task\` label, or a task issue that names none — set \`ran\` to false, say which step of the chain broke in \`note\`, and stop. That is a normal outcome for a branch outside the maestro flow, and not a failure.
+When the branch resolves to no requirement — ${specUnresolved} — set \`ran\` to false, say which step of the chain broke and why in \`note\`, and stop. That is a normal outcome for a branch outside the maestro flow, and not a failure.
 
 Put nothing in \`findings\`. Your output is \`specCheck\`. Use \`looksGood\` for one line naming the requirements you read and the verdict.`,
   });
@@ -769,8 +831,7 @@ const notStarted = [
   behaviourFiles.length === 0 &&
     "correctness (the diff changes only documents)",
   !hasSourceCode && "error-handling (the diff changes no source code)",
-  scope.taskIssues.length === 0 &&
-    "spec (the scope step resolved no task issue)",
+  specSkip && `spec (${specSkip.short})`,
 ].filter(Boolean);
 
 log(
@@ -830,15 +891,14 @@ if (!prShape)
     "No pull request shape verdict — the first pass of the plan carries it, and it returned none. The report must say so.",
   );
 
-const specCheck =
-  scope.taskIssues.length === 0
-    ? {
-        ran: false,
-        requirementIds: [],
-        contradictions: [],
-        note: "The scope step resolved no task issue: the branch has no pull request, or its body has no `Closes #<n>` line. The spec pass did not start.",
-      }
-    : ok.find((r) => r.pass === "spec")?.specCheck || null;
+const specCheck = specSkip
+  ? {
+      ran: false,
+      requirementIds: [],
+      contradictions: [],
+      note: specSkip.note,
+    }
+  : ok.find((r) => r.pass === "spec")?.specCheck || null;
 if (!specCheck)
   log(
     "No spec check — the pass carries it, and it returned none. The report must say so.",
@@ -1038,7 +1098,7 @@ Emit exactly this format, dropping any empty section:
 - ...
 
 Rules:
-- **Keep the spec section out of the severity groups too.** A contradiction is a decision for the author, not a defect to rank, and the fix is an edit to an issue rather than to the code.
+- **Keep the spec section out of the severity groups too.** A contradiction is a decision for the author, not a defect to rank, and the fix is an edit to the spec rather than to the code.
 - **Keep the shape section first, and keep it out of the severity groups.** It answers a process question that the review answers once, and a reader decides on a split before reading a single finding. Drop the section only when the verdict is absent.
 - Group comment findings into ONE entry per file, naming the lines to delete or the sentence worth keeping, so a reviewer can act in a single pass.
 - Cite the authority on every line, so each reads as a rule of this team rather than a generic nitpick.

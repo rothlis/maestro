@@ -1,7 +1,7 @@
 # Shared Project Memory
 
 Maestro's durable knowledge lives in a **git-committed, team-shared memory store**. Its
-directory is `memoryDir` in `.maestro/config.json`, and the default is `docs/memory/`. This
+directory is `memoryDir` in `.maestro/config.json`, and the default is `.maestro/memory/`. This
 file uses the default path.
 
 ## Why this exists
@@ -14,10 +14,10 @@ knowledge docs are almost never written and almost never read.
 Shared project memory copies the mechanic that works, but commits it to the repo so the
 **whole team** benefits, not just one developer's machine:
 
-- **`docs/memory/MEMORY.md`** is the index, one line per fact. A pointer to it lives in the
+- **`.maestro/memory/MEMORY.md`** is the index, one line per fact. A pointer to it lives in the
   repo's root `CLAUDE.md`, so it loads into every Claude session automatically. This is what
   makes the knowledge get read.
-- **`docs/memory/<slug>.md`** files each hold exactly one fact, with frontmatter. The body is
+- **`.maestro/memory/<slug>.md`** files each hold exactly one fact, with frontmatter. The body is
   pulled into context only when a session decides a fact is relevant, from its index line.
 
 The result: cross-project decisions, patterns and solved problems surface on their own in
@@ -31,16 +31,16 @@ every session. Use the real path when `memoryDir` is not the default.
 ```markdown
 ## Shared project memory
 
-Durable project knowledge lives in `docs/memory/`, one fact per file. At the start of
+Durable project knowledge lives in `.maestro/memory/`, one fact per file. At the start of
 relevant work, read any fact whose index line looks relevant.
 
-@docs/memory/MEMORY.md
+@.maestro/memory/MEMORY.md
 ```
 
 ## Layout
 
 ```
-docs/memory/
+.maestro/memory/
   MEMORY.md          <- index, one line per fact, auto-loaded via the CLAUDE.md pointer
   <slug>.md          <- one fact per file (kebab-case slug)
 ```
@@ -77,10 +77,10 @@ Link related facts with [[their-slug]].
 
 ## Read rules (research, spec)
 
-Before exploring the codebase, **scan `docs/memory/MEMORY.md`** and read any fact whose
+Before exploring the codebase, **scan `.maestro/memory/MEMORY.md`** and read any fact whose
 description looks relevant to the work. This is the first place to look for prior decisions
 and solved problems. It prevents re-deriving things the team already settled. It is in
-addition to the project's own research issues, not a replacement.
+addition to the project's own research artifacts, not a replacement.
 
 ## Write rules (build)
 
@@ -101,8 +101,9 @@ When writing a fact:
    sensible `##` heading, by domain or theme.
 4. Link related facts with `[[slug]]`.
 
-If the memory directory does not exist yet, create it with the first fact and its `MEMORY.md`,
-and offer the user the `CLAUDE.md` pointer above.
+`/maestro:maestro setup` creates the memory directory with an empty `MEMORY.md`, and offers
+the `CLAUDE.md` pointer above. If the directory does not exist yet, create it with the first
+fact and its `MEMORY.md`, and offer the pointer.
 
 ## Keeping the store healthy
 

@@ -8,8 +8,12 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { tmpdir } from "node:os"
 import { isAbsolute, join, resolve, sep } from "node:path"
 import { fileURLToPath } from "node:url"
+
+import { readConfig } from "../config.mjs"
 
 import {
   isFromPerson,
@@ -46,6 +50,8 @@ test("the workflow args carry the absolute install path of the plugin", () => {
     effort: "medium",
     route: true,
     pluginRoot: PLUGIN_ROOT,
+    store: "github",
+    trackerInstructions: "",
   })
   assert.ok(isAbsolute(args.pluginRoot))
   const here = fileURLToPath(new URL(".", import.meta.url))
@@ -56,6 +62,30 @@ test("the workflow args carry the absolute install path of the plugin", () => {
     JSON.parse(JSON.stringify(args)).pluginRoot === args.pluginRoot,
     "the printed JSON keeps the path",
   )
+})
+
+test("the workflow args carry the store and the tracker instructions of the config", () => {
+  const root = mkdtempSync(join(tmpdir(), "maestro-config-"))
+  try {
+    assert.equal(readConfig(root).store, "github")
+    mkdirSync(join(root, ".maestro"))
+    writeFileSync(
+      join(root, ".maestro", "config.json"),
+      JSON.stringify({
+        store: "tracker",
+        tracker: { $comment: "c", instructions: "Linear MCP." },
+      }),
+    )
+    const args = workflowArgs({
+      prBase: "origin/main",
+      effort: "medium",
+      config: readConfig(root),
+    })
+    assert.equal(args.store, "tracker")
+    assert.equal(args.trackerInstructions, "Linear MCP.")
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
 })
 
 test("prepare reads a pull request number and an effort", () => {

@@ -2,14 +2,20 @@
   "$comment": "Maestro settings for this repository. The file is optional, and each field you leave out takes the default shown here. A key that starts with $ is a comment.",
   "baseBranch": "main",
   "$baseBranch": "The branch pull requests merge into. Scripts measure against origin/<baseBranch>.",
-  "memoryDir": "docs/memory",
-  "$memoryDir": "The shared project memory: MEMORY.md is the index, one fact per file beside it.",
+  "memoryDir": ".maestro/memory",
+  "$memoryDir": "The shared project memory, in .maestro/ beside this file by default. MEMORY.md is the index, and each fact has its own file beside it.",
   "blueprintMap": ".maestro/blueprints/map.json",
   "$blueprintMap": "The map that ties paths to blueprints and review teams. With no map, the review runs its generic method and says that no blueprint was found.",
   "prTemplate": ".github/pull_request_template.md",
   "$prTemplate": "The pull request template that build and announce follow, when it exists.",
   "method": "default",
   "$method": "\"default\" works with any way of planning. \"shape-up\" also reads the Shape Up preset, skills/maestro/references/methods/shape-up.md.",
+  "store": "github",
+  "$store": "Where the artifacts live: project, research, spec, task, milestone and progress. \"github\" keeps them in GitHub issues. \"tracker\" keeps them in a tracker that an MCP reaches, as tracker.instructions says. Pull requests and the review stay on GitHub with either value.",
+  "tracker": {
+    "$comment": "Read only when store is \"tracker\". instructions says in free text which MCP to use and how each artifact maps. Example: Linear MCP. project = Linear project. spec = issue labelled spec in that project. task = sub-issue of its spec. research = Linear document in the project. milestone = project milestone. A PR links a task with `Fixes ENG-123` in its body. Leave instructions empty, and the first mode that needs the mapping asks you for it, then offers to save it here.",
+    "instructions": ""
+  },
   "branchPattern": "<type>/<slug>",
   "$branchPattern": "The branch name of a task. <type> is the kind of change, such as feat or fix, and <slug> the kebab-case task. An optional <n>, as in sprint-<n>/<slug>, comes from the user or the newest matching branch, and is never guessed. Remove the field, and build names the branch in plain kebab-case.",
   "announce": {

@@ -12,8 +12,8 @@
  * `prepare` reads the earlier passes and picks the base of a re-check. It then marks the
  * summary comment as started, so the comment exists before the review and stays at the top
  * of the pull request. It prints `pass`, `head-sha`, `base` (the base branch of the pull
- * request, `origin/<branch>`), `plugin-root`, `out-dir`, `args` (the workflow args, as JSON)
- * and, for a re-check, `recheck-prompt` (a file that says how to judge the earlier findings).
+ * request, `origin/<branch>`), `plugin-root`, `out-dir`, `args` (the workflow args, as JSON,
+ * with `store` and `tracker.instructions` from `.maestro/config.json`) and, for a re-check, `recheck-prompt` (a file that says how to judge the earlier findings).
  *
  * `post` posts the pass as the person who runs it, and prints `outcome`, `review-url` and
  * `summary-url`. A pass only comments: GitHub refuses an approval from the author.
@@ -43,6 +43,7 @@ import {
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
+import { DEFAULTS, readConfig } from "../config.mjs"
 import { isLogin } from "./author.mjs"
 import { markSummary } from "./mark.mjs"
 import { postPass } from "./post.mjs"
@@ -88,8 +89,21 @@ export function readArgs(argv) {
 }
 
 /** The args of the workflow. A re-check narrows `base` and adds its own keys later. */
-export function workflowArgs({ prBase, effort, pluginRoot = PLUGIN_ROOT }) {
-  return { base: prBase, prBase, effort, route: true, pluginRoot }
+export function workflowArgs({
+  prBase,
+  effort,
+  config = DEFAULTS,
+  pluginRoot = PLUGIN_ROOT,
+}) {
+  return {
+    base: prBase,
+    prBase,
+    effort,
+    route: true,
+    pluginRoot,
+    store: config.store,
+    trackerInstructions: config.tracker?.instructions ?? "",
+  }
 }
 
 function readPullRequest(arg) {
@@ -183,6 +197,12 @@ function recheckBase(lastHead, prBase) {
 
 async function prepare(argv) {
   const { pr: arg, effort } = readArgs(argv)
+  let config
+  try {
+    config = readConfig()
+  } catch (error) {
+    stop(error.message)
+  }
   restoreAfterInterruption()
   const pr = readPullRequest(arg)
   checkTree(pr)
@@ -197,7 +217,7 @@ async function prepare(argv) {
   say(line)
 
   const prBase = `origin/${pr.baseRefName}`
-  const args = workflowArgs({ prBase, effort })
+  const args = workflowArgs({ prBase, effort, config })
   let recheckPrompt = null
   let standInSha = null
   if (state.pass === "recheck") {

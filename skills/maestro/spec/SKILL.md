@@ -1,18 +1,21 @@
 ---
 name: spec
-description: Write the spec issue under a project — the requirements for one part of the work, as sections of one GitHub issue, in at most one milestone — then propose the task issues a pull request will close, and create them after the author approves.
-argument-hint: "[optional spec name, or the number of a spec issue to iterate on]"
+description: Write the spec under a project — the requirements for one part of the work, as sections of one spec, in at most one milestone — then propose the tasks a pull request will close, and create them after the author approves.
+argument-hint: "[optional spec name, or the reference of a spec to iterate on]"
 ---
 
-# Spec issue
+# Spec
 
 If `.maestro/config.json` sets `method` to `shape-up`, read `../references/methods/shape-up.md` and apply its section for this mode.
 
-A spec says **what** the product does when the work is done. It never says how the code
-works. The spec is one GitHub issue under the project issue, and its requirements are its
-sections. **The spec is the unit of progress**: `/maestro:maestro sync` counts per spec.
+Run every artifact operation through the store file: `../references/stores/<store>.md`, where
+`<store>` is config `store` (default `github`).
 
-The spec then creates the first task issues. Once the author approves them, a task is cheap:
+A spec says **what** the product does when the work is done. It never says how the code
+works. The spec is one artifact under the project, and its requirements are its sections.
+**The spec is the unit of progress**: `/maestro:maestro sync` counts per spec.
+
+The spec then creates the first tasks. Once the author approves them, a task is cheap:
 anybody adds one when the work appears.
 
 Use ultrathink for maximum reasoning depth.
@@ -34,7 +37,7 @@ the first letter of each word, and put it in upper case.
 | `fix-login-redirect-loop` | `FLRL`    | `FLRL-REQ-3` |
 | `search-result-ranking`   | `SRR`     | `SRR-REQ-2`  |
 
-Confirm the namespace with the user, and write it in the `**Namespace**` field of the issue
+Confirm the namespace with the user, and write it in the `**Namespace**` field of the spec
 body.
 
 ### The milestone segment
@@ -60,53 +63,35 @@ The segment is optional and never forced:
 
 ## Workflow
 
-### 1. Find the project issue
+### 1. Find the project
 
-```bash
-gh issue list --label maestro:project --state all --search "<project name>" --json number,title
-```
+**Find projects**, and take the one whose name matches.
 
-If no project issue exists, offer to run `/maestro:maestro init` first. A spec issue is a
-sub-issue of the project issue, so the project issue must exist before this mode writes
-anything.
+If no project exists, offer to run `/maestro:maestro init` first. A spec is a child of the
+project, so the project must exist before this mode writes anything.
 
-If the argument is an issue number labelled `maestro:spec`, read that issue. This is
-iteration mode. Go to step 7.
+If the argument is the reference of a spec, **read** that spec. This is iteration mode. Go to
+step 7.
 
 ### 2. Pick the milestone
 
-A milestone is a stage of the project: a native GitHub milestone named
-`<project-slug>/<milestone-name>`. Milestones are repository-wide, so the prefix ties them to
-the project. List the project's milestones:
-
-```bash
-gh api repos/{owner}/{repo}/milestones --paginate -X GET -f state=all \
-  --jq '.[] | select(.title | startswith("<project-slug>/")) | .title'
-```
+A milestone is a stage of the project. List the project's **milestones**.
 
 Ask with `AskUserQuestion` which one this spec belongs to. Offer each milestone, **none**, and
-a new one. Create a new one only after the user names it:
-
-```bash
-gh api repos/{owner}/{repo}/milestones -f title="<project-slug>/<milestone-name>"
-```
+a new one. Create a new one through **milestones** only after the user names it.
 
 **A spec belongs to at most one milestone.** A spec that would span two milestones is two
 specs. The milestone field is the only link: sync groups specs by it, and nothing else in the
 body says where a spec belongs.
 
-Count the specs the project already holds. A second spec is the signal for a milestone
-segment in the namespace:
-
-```bash
-gh api repos/{owner}/{repo}/issues/<project>/sub_issues --jq '.[] | select(.labels[].name == "maestro:spec") | .number'
-```
+List the project's **children**, and count the specs it already holds. A second spec is the
+signal for a milestone segment in the namespace.
 
 ### 3. Read the research and the memory
 
-1. **The research issues of the project.** Read every sub-issue labelled `maestro:research`.
-   Their findings and their open questions are what the requirements are derived from. Link
-   them in the `**Research**` field.
+1. **The research of the project.** **Read** every research child of the project. Its
+   findings and its open questions are what the requirements are derived from. Link each one
+   in the `**Research**` field.
 2. **Shared project memory.** Scan `<memoryDir>/MEMORY.md` and read every fact whose hook
    looks relevant. Prior decisions say what is already settled, and stop the spec
    re-litigating them. See [../memory.md](../memory.md).
@@ -149,8 +134,7 @@ rule.
 
 ### 5. Size each requirement
 
-A requirement becomes one or more task issues, and a task issue becomes part of one pull
-request. Size the requirements now, while they are still cheap to move. A pull request that
+A requirement becomes one or more tasks, and a task becomes part of one pull request. Size the requirements now, while they are still cheap to move. A pull request that
 is too large is corrected by a rebase and a second branch, after the reviewer has already
 read it.
 
@@ -170,16 +154,11 @@ whole, and record the intended pull request order inside its `<details>` block.
 State the count in **The solution**: how many pull requests the list holds, and how many of
 them are small.
 
-### 6. Write the spec issue
+### 6. Write the spec
 
-```bash
-gh issue create --title "Spec: <Title>" --label maestro:spec --parent <project> \
-  --milestone "<project-slug>/<milestone-name>" --body-file <path>
-```
-
-Write the body with `--body-file`. A here-string loses the line returns. `--parent` attaches
-the issue to the project in the same call. Drop `--milestone` when the user chose none. The full route, and the fallback for a direct REST
-call, are in [../SKILL.md](../SKILL.md).
+**Create** a spec under the project, titled `Spec: <Title>`, with the body below, in the
+milestone the user chose. Leave the milestone out when the user chose none. Then **read** it
+back, and compare it with what you sent.
 
 #### The body
 
@@ -189,9 +168,9 @@ horizontal rule (`---`) anywhere. The headings do that work.
 ```markdown
 **Date**: <YYYY-MM-DD>
 **Team**: <team>
-**Project**: `<project-name>` — #<project issue number>
+**Project**: `<project-name>` — <project ref>
 **Namespace**: <NS>
-**Research**: #<research issue number>
+**Research**: <research ref>
 
 > One line. What a person can do when this is done.
 
@@ -228,7 +207,7 @@ done.
 
 ### <NS>-REQ-1: <Requirement Title>
 
-`must` · #<task issue> · Depends on <NS>-REQ-2
+`must` · <task ref> · Depends on <NS>-REQ-2
 
 Two to four lines. What is true when this is done, why it is not true today, and the one
 sentence a reader must not miss, in bold.
@@ -248,7 +227,7 @@ requirement cannot be split.
 
 ## Decisions taken
 
-These are settled, and the requirements above assume them. The research issues hold the
+These are settled, and the requirements above assume them. The research holds the
 reasoning.
 
 - ...
@@ -267,17 +246,17 @@ reasoning.
 
 ## Tasks
 
-The task issues, in the order they land, each with what it waits on.
+The tasks, in the order they land, each with what it waits on.
 
-1. #<task> — <what it delivers>.
-2. #<task> — <what it delivers>, after #<task>.
+1. <task ref> — <what it delivers>.
+2. <task ref> — <what it delivers>, after <task ref>.
 ```
 
 Omit the `**Team**` line when the context does not give it.
 
 #### The collapsed block is the rule, not an option
 
-A person who opens the issue wants the outline of the work. A person who builds one requirement
+A person who opens the spec wants the outline of the work. A person who builds one requirement
 wants its criteria. The first reader must not pay for the second. So every requirement puts
 its acceptance criteria and its technical notes inside the `<details>` block, and keeps
 outside only the prose a reader needs to understand the requirement. Keep the visible part to
@@ -289,7 +268,7 @@ four lines or fewer.
 | ---------- | ----------------------------- | ----------------------- |
 | Priority   | Always, first                 | `` `must` ``            |
 | Status     | Only when it is not `pending` | `` `in_progress` ``     |
-| Task issue | Only when one exists          | `#123`                  |
+| Task       | Only when one exists          | `#123`, `ENG-123`       |
 | Dependency | Only for a hard dependency    | `Depends on <NS>-REQ-1` |
 
 Divide the parts with `·`. A requirement that is pending, uncut and independent carries its
@@ -322,26 +301,22 @@ priorities shift, change the status.
 whose goal is to make broken behavior work again, and it takes the same form. Keep it in the
 `<NS>-REQ-N` sequence, so that one list gives one honest count.
 
-### 7. Propose the task issues
+### 7. Propose the tasks
 
-A task issue is the unit a pull request closes. Propose the first ones now, and create none
-of them before the author approves.
+A task is the unit a pull request closes. Propose the first ones now, and create none of them
+before the author approves.
 
 Show the user the proposed list: a title, the requirements each task carries, what it waits
 on, and one line on what it delivers. Use `AskUserQuestion` for the approval.
 
-For each approved task, create the issue and attach it to the **spec** issue. **A task takes
-its spec's milestone**, so a milestone view in GitHub shows the whole stage:
-
-```bash
-gh issue create --title "Task: <what it delivers>" --label maestro:task --parent <spec> \
-  --milestone "<the spec's milestone>" --body-file <path>
-```
+For each approved task, **create** a task under the **spec**, titled
+`Task: <what it delivers>`, with the body below. **A task takes its spec's milestone**, so the
+milestone shows the whole stage.
 
 The task body:
 
 ```markdown
-**Project**: #<project> · **Spec**: #<spec> · **Requirements**: <NS>-REQ-1, <NS>-REQ-2
+**Project**: <project ref> · **Spec**: <spec ref> · **Requirements**: <NS>-REQ-1, <NS>-REQ-2
 
 <What this task delivers, in two to five lines. The constraints that decide its form, in
 bold.>
@@ -349,34 +324,33 @@ bold.>
 Proof: <how somebody knows it works. Name the command or the run.>
 ```
 
-Then edit the spec issue: write each task number on its requirement's line, and fill the
-**Tasks** section. `--body-file` replaces the whole body, so start from the body you read,
-and read it back after the edit, as [../SKILL.md](../SKILL.md) says.
+Then **replace body** of the spec: write each task reference on its requirement's line, and
+fill the **Tasks** section. Start from the body you read, and change only those parts.
 
 ### 8. Resolve the open questions
 
 Walk the user through every open question before you finish. For each one: discuss it,
 explore the codebase if that resolves it, then either resolve it or mark it **deferred** with
-a reason. Edit the issue as each one is settled.
+a reason. **Replace body** of the spec as each one is settled.
 
 A deferred question is acceptable. An unaddressed one is not. Do not propose going to build
 while a question blocks a requirement.
 
 ## Iterating on a spec
 
-A spec is a living issue.
+A spec is a living artifact.
 
 - Add a new requirement at the bottom, with the next `<NS>-REQ-N` number.
 - Reprioritize and rewrite a pending requirement freely.
 - Mark a completed but irrelevant requirement `obsolete`. Never delete it.
-- When the goal itself shifts, rewrite **The problem** or **The solution**. The issue states
+- When the goal itself shifts, rewrite **The problem** or **The solution**. The spec states
   what the work is now, and the statuses carry the history.
-- When the spec moves to another stage, change its milestone and its tasks' milestones with
-  `gh issue edit --milestone`.
+- When the spec moves to another stage, set its milestone and its tasks' milestones through
+  **milestones**.
 
 After a build lands:
 
-1. Read the issue again, because it can have changed.
+1. **Read** the spec again, because it can have changed.
 2. Write `` `done` `` on the requirement's line, and name the pull request there.
 3. Check the criteria that are satisfied. **A criterion that asserts something no longer
    happens is checked only when it names the test that proves it.** If one criterion holds
@@ -390,6 +364,6 @@ After a build lands:
 
 ## What spec does not do
 
-- It writes no file. The output is the spec issue and its task issues.
-- It creates no task issue before the author approves it.
+- It writes no file. The output is the spec and its tasks.
+- It creates no task before the author approves it.
 - It carries no implementation detail. The build decides that.

@@ -9,6 +9,9 @@ argument-hint: "[PR number or URL — several for a stack; none for the current 
 Turn a pull request into the announcement the team reads, and post it **after one explicit
 confirmation**, every time.
 
+Run every artifact operation through the store file: `../references/stores/<store>.md`, where
+`<store>` is config `store` (default `github`).
+
 ## The one hard rule
 
 **Never send to the channel, and never run `gh pr ready`, before the author answers the
@@ -33,7 +36,8 @@ call one. If no Slack tool is connected, say so and stop. Offer the final text, 
 can paste it.
 
 **The channel is `announce.slackChannel` in `.maestro/config.json`.** If the field is missing,
-ask the author for the channel, and say that the field saves the question next time. Resolve
+ask the author for the channel. Then say that `/maestro:maestro setup` saves it in the config,
+so that the question does not come back. Resolve
 the channel name to its id with the channel search tool, once per invocation.
 
 ### 2. Resolve the pull requests
@@ -52,7 +56,7 @@ Record `isDraft` for each one, and continue. A draft becomes part of the questio
 **For a stack, read two more things:**
 
 - **The GitHub stack.** Run `gh api "repos/{owner}/{repo}/stacks?pull_request=<n>"` with any pull request of the stack. Its page is `https://github.com/{owner}/{repo}/stack/<number>`. If nothing comes back, there is no stack page.
-- **The spec.** A pull request closes a task issue, and the parent of that issue is the spec: `gh api repos/{owner}/{repo}/issues/<task>/parent`. Read its solution section. If no pull request closes a task, there is no spec.
+- **The spec.** A pull request closes a task, and the parent of that task is the spec. Find the task from the pull request with **link PR**, **read** the task for its parent, then **read** the spec. Read its solution section. If no pull request closes a task, there is no spec.
 
 Read the body. Its Why and What sections are the raw material. Invent nothing that the pull
 request or its diff does not say.

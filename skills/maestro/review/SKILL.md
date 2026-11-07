@@ -13,7 +13,7 @@ This is `/maestro:maestro review`: a repo-aware review of a **pull request**, at
 
 **The review lives in one place: [`workflows/maestro-review.js`](../../../workflows/maestro-review.js).** That script holds the passes, the engine each one uses, and the override every engine needs. This file does not repeat them — a second copy would drift. [`references/method.md`](references/method.md) holds the review's own method: how to cite an authority, the comment measurement, the guards, the security leads, and what not to flag. Every reviewer reads it directly. [`../references/review-risk.md`](../references/review-risk.md) holds the rules that decide whether a person must read the change.
 
-Why a workflow and not this skill's own dispatches: the passes must run in parallel, in separate contexts. A workflow script spawns subagents; an agent cannot. So the fan-out belongs one level up, in the script. A pass starts only when the diff holds files it reviews, and it reads only those files: the bug passes skip documents, each surface pass waits for a file on its surface, and the spec pass waits for a task issue.
+Why a workflow and not this skill's own dispatches: the passes must run in parallel, in separate contexts. A workflow script spawns subagents; an agent cannot. So the fan-out belongs one level up, in the script. A pass starts only when the diff holds files it reviews, and it reads only those files: the bug passes skip documents, each surface pass waits for a file on its surface, and the spec pass waits for a task reference.
 
 ## The team's standards
 
@@ -22,6 +22,11 @@ The review reads the team's files from the consumer repository, never from this 
 - **`.maestro/config.json`**, optional. `baseBranch` (default `main`) gives the base, `origin/<baseBranch>`. `blueprintMap` (default `.maestro/blueprints/map.json`) names the map.
 - **The blueprint map.** Each surface in it has an `id`, a `blueprint`, `paths`, and optionally `reviewRisk`, `reviewTeam` and `designReview`. The review buckets the changed files by surface and runs one checklist pass per touched surface, against that surface's blueprint. A surface that sets `designReview` also gets a design pass, which reads that file as its design guide. A file that no surface matches goes to a conventions pass on the generic method.
 - **No map** → the review still runs, on the generic method, the repository's instructions files and the code. The report says that no blueprint was found.
+- **The store.** The config field `store` (default `github`) says where the tasks and the specs live. The spec check works on either store:
+  - On `github`, it reads the task and its spec with `gh`.
+  - On `tracker`, it reads them with the tracker's MCP tools, as `tracker.instructions` says. The tracker's MCP must be connected in the session that runs the review. If the MCP is not connected, or the instructions are empty, the spec check does not run. The report then says why.
+
+  Pull requests and the review stay on GitHub with either store, so every pull request command stays `gh`.
 
 ## Before the review starts
 
@@ -86,7 +91,7 @@ The review runs the `maestro-review` workflow in this session, on the user's tok
 1. Run `node ${CLAUDE_PLUGIN_ROOT}/scripts/review/local.mjs prepare [<n>] [--effort <level>]`. It checks that the working tree is clean and on the pushed head, reads the earlier passes, and picks the base of a re-check. Then it marks the summary comment as started, so the comment exists before the review and stays at the top of the pull request.
 2. If the script exits with code 2, the local branch has commits that the remote does not have. Ask the user whether to push them first. If the user says no, stop, because the fix loop pushes the whole branch and those commits go out with the fixes. If the user says yes, push them, then do step 1 again. If it exits with code 3, the working tree has changes: handle them as [Before the review starts](#before-the-review-starts) says, then do step 1 again. If it exits with code 1, report its last line and stop.
 3. Note `head-sha`, `out-dir`, `args` and, for a re-check, `recheck-prompt`. A re-check can move HEAD to a stand-in commit with the same files, so do not commit until step 6 ends.
-4. Run `Workflow({ name: "maestro:maestro-review", args: <args> })`, with `args` exactly as printed: they already hold `pluginRoot`, the base, the effort and the re-check inputs. If the tool finds no workflow by that name, run `Workflow({ scriptPath: "${CLAUDE_PLUGIN_ROOT}/workflows/maestro-review.js", args: <args> })`, which needs read access to the plugin's directory. Hold the tree still until it returns, as [the section above](#the-review-reads-the-checked-out-tree-in-two-phases) says. When it returns, write its whole return value as JSON to `<out-dir>/result.json` with the Write tool. If it fails, run `node ${CLAUDE_PLUGIN_ROOT}/scripts/review/local.mjs failed`, which puts the branch back and marks the summary as failed, then report the failure and stop.
+4. Run `Workflow({ name: "maestro:maestro-review", args: <args> })`, with `args` exactly as printed: they already hold `pluginRoot`, the base, the effort, the store, the tracker instructions and the re-check inputs. If the tool finds no workflow by that name, run `Workflow({ scriptPath: "${CLAUDE_PLUGIN_ROOT}/workflows/maestro-review.js", args: <args> })`, which needs read access to the plugin's directory. Hold the tree still until it returns, as [the section above](#the-review-reads-the-checked-out-tree-in-two-phases) says. When it returns, write its whole return value as JSON to `<out-dir>/result.json` with the Write tool. If it fails, run `node ${CLAUDE_PLUGIN_ROOT}/scripts/review/local.mjs failed`, which puts the branch back and marks the summary as failed, then report the failure and stop.
 5. If `prepare` printed `recheck-prompt`, read that file and do what it says. It judges each earlier finding, and it writes `<out-dir>/recheck.json`.
 6. Run `node ${CLAUDE_PLUGIN_ROOT}/scripts/review/local.mjs post`. It puts the branch back on the reviewed head, posts the pass, writes the verdict marker, and prints `outcome`, `review-url` and `summary-url`. If it stops on a pending review of the user, tell the user to submit or delete that review, then run `post` again.
 7. Read the verdict from `outcome`: `approve` is an approval, `changes` is a change request, and `fixes` or `unsure` is a comment. Then go to [the fix loop](#fix-the-findings).
@@ -103,12 +108,15 @@ Outside this route, such as from another workflow, pass the args yourself. `plug
 const review = await workflow("maestro:maestro-review", {
   pluginRoot: "${CLAUDE_PLUGIN_ROOT}",
   baseBranch: "main", // from .maestro/config.json
+  store: "github", // from .maestro/config.json
+  trackerInstructions: "", // tracker.instructions, when store is "tracker"
   effort: "medium",
 });
 ```
 
 - **`base`** defaults to `origin/<baseBranch>`, and the scope phase fetches it first. Do not pass a plain local branch: a local base that is behind adds the upstream commits to the diff.
 - **`scope`** narrows the review to paths or aspects. **When the arguments name a level, take that word out before you use the rest as `scope`.** A level left inside `scope` narrows the review to a path that does not exist, and the review then reports on nothing.
+- **`store`** defaults to `github`. With `tracker`, pass `trackerInstructions` too. Without them, the spec check does not run, and the report says so.
 - `workflow()` nests one level only, so call it from the top-level script.
 
 It returns `{ report, prShape, specCheck, humanReview, blueprintMap, surfaces, findings, confirmedCount, droppedSuggestionCount, refutedCount, unverifiedCount, passes, failedPasses }`.
@@ -121,14 +129,14 @@ It returns `{ report, prShape, specCheck, humanReview, blueprintMap, surfaces, f
 - **`unverifiedCount`** — findings that no refutation pass checked, because the verifier failed or because they sit past the verification cap. They stay in the report, marked unverified.
 - **`blueprintMap`** — `null` means no map was found, so the passes ran on the generic method only. Say so.
 - **`prShape`** — the pull request shape verdict, which one pass carries as its one process exception. It is the first section of `report`. It is a verdict and not a finding, so it never appears in a severity group and no refutation pass judged it. A `null` here means the check did not run, and the report says so.
-- **`specCheck`** — whether the diff contradicts a requirement it is meant to satisfy, from the `spec` pass. It is a verdict too, reported apart from the findings. **Carry `requirementIds` over even when `contradictions` is empty**, because a check that found nothing and a check that never ran read the same otherwise. `ran: false` means the branch resolved to no `maestro:task` issue, which is normal outside the maestro flow, and `note` says which step of the chain broke.
+- **`specCheck`** — whether the diff contradicts a requirement it is meant to satisfy, from the `spec` pass. It is a verdict too, reported apart from the findings. **Carry `requirementIds` over even when `contradictions` is empty**, because a check that found nothing and a check that never ran read the same otherwise. `ran: false` means one of two things. The branch resolved to no task, which is normal outside the maestro flow. Or the review could not read the store, for example because the tracker's MCP is not connected. `note` says which step of the chain broke.
 - **`humanReview`** — whether a person must read the change, from the `Route` phase, against [`review-risk.md`](../references/review-risk.md) and the `reviewRisk` file of each touched surface. It is a decision, and it gates nothing: the author decides when to merge. Each reason names a file, the rule that fired, and its level. The review requests no team itself: the summary marks each team that the map's `reviewTeam` gives a reason, and the author requests it. A `null` here means the check did not run, and the report says so.
 
 If `findings` is empty and `failedPasses` is empty, confirm the diff is clean and name the passes that ran. Silence reads as "not checked".
 
 ## Fix the findings
 
-1. Read the summary. The number after `issuecomment-` in `summary-url` is its id: `gh api repos/{owner}/{repo}/issues/comments/<id> --jq .body`. Its first section is the current pass, and it links each open line or file comment.
+1. Read the summary. The number after `issuecomment-` in `summary-url` is its id: `gh pr view <n> --json comments --jq '.comments[] | select(.url | endswith("issuecomment-<id>")) | .body'`. Its first section is the current pass, and it links each open line or file comment.
 2. Report the verdict, the teams that the human review names, the findings that are still open, and the link to the summary. Do not copy the whole summary into the conversation. If the verdict is `approve` and no finding is open, stop here.
 3. Sort the open findings by the severity label of each comment. A `Blocking` or a `Should fix` finding is required, because it holds the verdict back. A `Suggestion` is optional. The summary gives the label of each open finding, from this pass and from earlier passes. If a label is missing, read the severity of a line or file comment from the `<!-- maestro-finding severity=… -->` marker in the first comment of its thread. For a finding in a file outside the diff, read it from the body-findings marker of the newest verdict review. A finding is already declined when a person replied to it to decline it or to justify it. The `Not fixed` reply of step 8 is one example, and a reply in the words of the user is another. For a line or file comment, read the replies in its thread. For a finding in a file outside the diff, read the pull request comments that name its id. Steps 4 to 6 skip a declined finding, so the loop never overrides a decision of the user. If you cannot tell whether a reply declines the finding, do not fix it in step 4 or step 5. Put it in the question of step 6.
 4. Fix each required finding now, without a question. Read the code at the cited line before you fix it. If you think that a required finding is wrong, do not fix it. Put it in the question of step 6, with your reason.

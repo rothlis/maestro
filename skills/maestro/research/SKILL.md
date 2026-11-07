@@ -1,14 +1,16 @@
 ---
 name: research
-description: Explore a topic across five sources in parallel — shared memory, the codebase, prior art, the team's own docs, and the team's chat — then grill the findings and write a research issue under the project issue. The output is a GitHub issue, never a file.
-argument-hint: "[optional topic, or the number of a research issue to iterate on]"
+description: Explore a topic across five sources in parallel — shared memory, the codebase, prior art, the team's own docs, and the team's chat — then grill the findings and write a research artifact under the project, in the store. The output is an artifact, never a file.
+argument-hint: "[optional topic, or the reference of a research artifact to iterate on]"
 ---
 
-# Research issue
+# Research
 
 Research finds out what is already true before anybody decides what to build. It reads five
-sources at the same time, grills the findings afterwards, and writes one GitHub issue under
-the project issue.
+sources at the same time, grills the findings afterwards, and writes one research artifact under
+the project.
+
+Run every artifact operation through the store file: `../references/stores/<store>.md`, where `<store>` is config `store` (default `github`).
 
 **Two orderings are load-bearing.** The five sources run in parallel, because each one
 answers a different question and none waits on another. The grilling runs last, because a
@@ -18,25 +20,21 @@ Use ultrathink for maximum reasoning depth.
 
 ## Workflow
 
-### 1. Find the project issue
+### 1. Find the project
 
-```bash
-gh issue list --label maestro:project --state all --search "<project name>" --json number,title
-```
+**Find projects**, and pick the one with this name.
 
-If no project issue exists, offer to run `/maestro:maestro init` first. The research issue is
-a sub-issue of the project issue, so the project issue must exist before this mode writes
-anything.
+If no project exists, offer to run `/maestro:maestro init` first. The research is a child of
+the project, so the project must exist before this mode writes anything.
 
-If the argument is an issue number labelled `maestro:research`, read that issue. This is
-iteration mode: ask the user what to add or revise, then run the sources that the change
-needs.
+If the argument is the reference of a research artifact, **read** it. This is iteration mode:
+ask the user what to add or revise, then run the sources that the change needs.
 
 ### 2. Get the topic
 
 Read the topic from the argument, or ask the user for it. A topic is one question, such as
-"how does the sync worker retry a failed job". A project holds several research issues,
-one per topic.
+"how does the sync worker retry a failed job". A project holds several research
+artifacts, one per topic.
 
 ### 3. Read the blueprints first
 
@@ -56,10 +54,10 @@ blueprint and the topic in every prompt.
 | **Shared memory**    | What the team already settled, so nothing is re-derived                             | `<memoryDir>/MEMORY.md`, then every fact whose hook looks relevant                                    |
 | **The codebase**     | How it works today, and what must change                                            | Codebase exploration sub-agents, such as `Explore`. Never a manual chain of Grep and Read              |
 | **Prior art**        | What already does the job, inside this repository and outside it, on the web       | Step 5 below                                                                                          |
-| **The team's docs**  | What the team wrote about this before: docs, RFCs, earlier project, research, spec and task issues | Any connected doc MCP, the repository's docs, and `gh issue list --state all --label maestro:research` |
+| **The team's docs**  | What the team wrote about this before: docs, RFCs, earlier projects, research, specs and tasks | Any connected doc MCP, the repository's docs, and **find projects**, then the research **children** of each |
 | **The team's chat**  | What people said about this, and what they decided in a thread that reached no doc  | The Slack MCP, or another chat MCP. Read any channel you can reach                                    |
 
-**A source with no tool is skipped, and the issue says so.** When no doc MCP or chat MCP is
+**A source with no tool is skipped, and the research says so.** When no doc MCP or chat MCP is
 connected, the sub-agent for it does not run, and the **Detail** section names the source
 that was not read. A silent gap reads as "nothing found".
 
@@ -99,25 +97,19 @@ agent instructions and tool wiring. Quote the excerpts that make the architectur
 Grill the findings, and never before them. If a grilling skill is installed (for example
 `/grill-me`), use it, else grill inline. The grilling attacks what the five sources returned:
 the assumption nothing proved, the conclusion one source carries alone, the alternative
-nobody priced. What survives the grilling goes in the issue. What does not survive becomes an
+nobody priced. What survives the grilling goes in the research. What does not survive becomes an
 open question.
 
-### 8. Write the research issue
+### 8. Write the research artifact
 
-Create the issue and attach it to the project in the same call, with `--parent`. The full
-route, and the fallback for a direct REST call, are in [../SKILL.md](../SKILL.md).
-
-```bash
-gh issue create --title "Research: <Topic>" --label maestro:research --parent <project> --body-file <path>
-```
-
-Write the body with `--body-file`. A here-string loses the line returns.
+**Create** a research artifact under the project, with the title `Research: <Topic>` and the
+body below. Then read the body back, as [../SKILL.md](../SKILL.md) says under Writing a body.
 
 #### The body
 
 ```markdown
 **Date**: <YYYY-MM-DD>
-**Project**: #<project issue number>
+**Project**: <project ref>
 
 > One line. The question this research answers.
 
@@ -168,14 +160,13 @@ that says no chat tool was connected.
 
 Walk the user through every open question before you finish. For each one: discuss it,
 explore the codebase if that resolves it, then either resolve it or mark it **deferred**
-with a reason. Edit the issue with `gh issue edit` as each one is settled, and read the body
-back each time, as [../SKILL.md](../SKILL.md) says.
+with a reason. **Replace body** of the research as each one is settled.
 
 A deferred question is acceptable, because the team then chose to go on with the uncertainty.
 An unaddressed one is not.
 
 ## What research does not do
 
-- It writes no file. The output is the research issue.
+- It writes no file. The output is the research artifact.
 - It writes no requirement. `/maestro:maestro spec` owns those.
 - It never grills before it explores. The exploration always comes first.

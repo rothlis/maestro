@@ -25,7 +25,7 @@ belongs to that blueprint's owner.
 code. The report says that no blueprint was found, so nobody reads a generic review as a
 review against the team's standard.
 
-The team's shared memory (the `memoryDir` of `.maestro/config.json`, `docs/memory` by
+The team's shared memory (the `memoryDir` of `.maestro/config.json`, `.maestro/memory` by
 default) is **not** an authority. Its facts help a pass remember traps the team hit, but
 a fact can be stale or bound to one context. Treat it only as a **lead to check**: verify
 it against the current code before you raise it, and never cite a memory fact as a rule

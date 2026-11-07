@@ -1,14 +1,14 @@
 # Shape Up preset
 
 Read this file only when `.maestro/config.json` sets `method` to `shape-up`. Each section
-changes one mode, and a mode reads only its own section. The labels, the tree and the issue
-body write rules do not change. **The preset changes words, never labels.**
+changes one mode, and a mode reads only its own section. The kinds, the tree, the store and
+the body write rules do not change. **The preset changes words, never the kinds.**
 
 ## Words
 
 | Core                                 | Shape Up                                    |
 | ------------------------------------ | ------------------------------------------- |
-| project issue                        | pitch issue (label stays `maestro:project`) |
+| project                              | pitch (the kind stays `project`)            |
 | brief                                | shaped pitch                                |
 | milestone                            | scope                                       |
 | `<n>` in a branch                    | the cycle or cooldown number                |
@@ -29,8 +29,8 @@ not bet.
 ## init
 
 **One milestone per scope.** The scopes come from shaping. Read their names from the shaped
-pitch, or ask the user, and create one milestone for each: `<pitch-slug>/<scope-name>`.
-Write the names only: a scope's description stays in the shape.
+pitch, or ask the user, and create one milestone (store operation) for each, named for
+the scope. Write the names only: a scope's description stays in the shape.
 
 **A pitch can have no scopes yet.** Then it gets no milestone, and sync uses one hill named for
 the pitch.

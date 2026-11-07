@@ -1,7 +1,7 @@
 ---
 name: maestro
-description: Orchestrate the work once a team has decided to build something — open the project issue, research a topic, write the spec and its requirements, build one task, sync progress to the board, review a pull request against the team's blueprints, and announce a pull request in the team's chat. The artifacts are a tree of labelled GitHub issues, and durable learnings go to shared project memory. Use when starting a project, researching, writing requirements, building a task, updating the board, reviewing a pull request ("review my changes"), or announcing a pull request ("post the PR to Slack", "announce this PR", "post the stack").
-argument-hint: "<init|research|spec|build|sync|review|announce> [optional argument]"
+description: Orchestrate the work once a team has decided to build something — set Maestro up in a repository, open the project, research a topic, write the spec and its requirements, build one task, sync progress to the board, review a pull request against the team's blueprints, and announce a pull request in the team's chat. The artifacts are a tree in a store, GitHub Issues by default or the team's tracker through its MCP, and durable learnings go to shared project memory. Use when setting Maestro up in a repository, starting a project, researching, writing requirements, building a task, updating the board, reviewing a pull request ("review my changes"), or announcing a pull request ("post the PR to Slack", "announce this PR", "post the stack").
+argument-hint: "<setup|init|research|spec|build|sync|review|announce> [optional argument]"
 metadata:
   tags: research,requirements,execution,shared-memory
   alwaysApply: "false"
@@ -10,31 +10,33 @@ metadata:
 # Maestro
 
 Maestro runs the work once the team has decided to build something. **Your brief keeps the
-argument, and GitHub holds the work.** A brief is any PRD, RFC or doc that says why, in any
+argument, and the store holds the work.** A brief is any PRD, RFC or doc that says why, in any
 tool. A project needs none.
 
-A project is a tree of labelled GitHub issues. An agent keeps that tree current, so the
-person who picks a project up finds its research, its requirements and its open tasks in one
-place, and finds them true.
+A project is a tree of artifacts in a store: GitHub Issues by default, or the team's tracker.
+An agent keeps that tree current, so the person who picks a project up finds its research, its
+requirements and its open tasks in one place, and finds them true.
 
 Durable, cross-cutting knowledge does not live in the tree. It lives in shared project memory,
 which loads into every session on its own. See [memory.md](memory.md).
 
 ## Configuration
 
-A team can put `.maestro/config.json` at the root of its repository. The file is optional,
-and every field has a default.
+A team can put `.maestro/config.json` at the root of its repository. `/maestro:maestro setup`
+writes it, with every value. The file is optional, and every field has a default.
 
-| Field                  | Default                             | Used by                                    |
-| ---------------------- | ----------------------------------- | ------------------------------------------ |
-| `baseBranch`           | `main`                              | `build`, `review`, the pull request shape  |
-| `memoryDir`            | `docs/memory`                       | every mode that reads or writes memory     |
-| `blueprintMap`         | `.maestro/blueprints/map.json`      | every mode that reads a blueprint          |
-| `prTemplate`           | `.github/pull_request_template.md`  | `build`                                    |
-| `branchPattern`        | none: plain kebab-case              | `build`, the project name, see Context     |
-| `method`               | `default`                           | `init`, `spec`, `sync`, see Methods        |
-| `announce.slackChannel` | none: `announce` asks for a channel | `announce`                              |
-| `board.instructions`   | none: `sync` writes the project issue | `sync`                                   |
+| Field                   | Default                              | Used by                                    |
+| ----------------------- | ------------------------------------ | ------------------------------------------ |
+| `baseBranch`            | `main`                               | `build`, `review`, the pull request shape  |
+| `memoryDir`             | `.maestro/memory`                    | every mode that reads or writes memory     |
+| `blueprintMap`          | `.maestro/blueprints/map.json`       | every mode that reads a blueprint          |
+| `prTemplate`            | `.github/pull_request_template.md`   | `build`                                    |
+| `branchPattern`         | none: plain kebab-case               | `build`, the project name, see Context     |
+| `method`                | `default`                            | `init`, `spec`, `sync`, see Methods        |
+| `store`                 | `github`                             | every mode that touches an artifact, see Stores |
+| `tracker.instructions`  | none: the mode asks once             | every mode, when `store` is `tracker`      |
+| `announce.slackChannel` | none: `announce` asks for a channel  | `announce`                                 |
+| `board.instructions`    | none: `sync` writes the project only | `sync`                                     |
 
 Read the file once at the start of a mode. A missing file or a missing field takes the
 default.
@@ -46,95 +48,104 @@ newest matching branch, never guessed. Without the field, the branch is plain ke
 ## The tree
 
 ```
-Project issue                       maestro:project    the root, a pointer: links, progress
-├── Research issue                  maestro:research   what was unknown before the work
-├── Spec issue                      maestro:spec       the requirements, as its sections
-│   ├── Task issue                  maestro:task       the unit a pull request closes
-│   └── Task issue
-└── Spec issue
-    └── Task issue
+Project                 the root, a pointer: links, progress
+├── Research            what was unknown before the work
+├── Spec                the requirements, as its sections
+│   ├── Task            the unit a pull request closes
+│   └── Task
+└── Spec
+    └── Task
 ```
+
+An artifact is one node of the tree. Its kind is project, research, spec or task, and it has a
+title, a body, a status and a parent. The store file says how each kind is marked, such as a
+label on GitHub.
 
 **The spec is the unit of progress.** A requirement lives inside a spec, as a section, and it
 carries a namespaced identifier such as `BIE-REQ-4`.
 
 **A spec may carry a milestone.** A milestone is an optional stage of the project, such as a
-phase or a release. It is a native GitHub milestone named `<project-slug>/<milestone-name>`,
-because milestones are repository-wide and the prefix ties them to one project. A spec
-belongs to one milestone at most, its tasks take the spec's milestone, and `sync` groups
-progress by milestone.
+phase or a release. A spec belongs to one milestone at most, its tasks take the spec's
+milestone, and `sync` groups progress by milestone. The **milestones** operation lists,
+creates and sets them, and the store file says how a milestone is named.
 
-**The project issue is a pointer, not a document.** Its body holds the fields that link the
-brief and the board, and a progress section between `<!-- maestro:progress:start -->` and
+**The project is a pointer, not a document.** Its body holds the fields that link the brief
+and the board, and a progress section between `<!-- maestro:progress:start -->` and
 `<!-- maestro:progress:end -->`. `init` writes the fields. `sync` owns the progress section,
-and no other mode writes inside it.
+and no other mode writes inside it. When a store strips the two markers, its store file gives
+the fallback.
 
-**A body reference is not enough.** The parent and the child must be joined through the
-sub-issues API, so that GitHub itself shows the tree and one query finds every project.
+**A body reference is not enough.** A child joins its parent through the store's own link, so
+that the store itself shows the tree, and one query finds every project.
 
-| Issue    | Label              |
-| -------- | ------------------ |
-| Project  | `maestro:project`  |
-| Research | `maestro:research` |
-| Spec     | `maestro:spec`     |
-| Task     | `maestro:task`     |
+A **reference** names one artifact in text: `#12` on GitHub, `ENG-123` on Linear, `PROJ-45` on
+Jira. The mode files write `<ref>`.
 
-`/maestro:maestro init` creates any label that is missing. No other mode creates a label.
+**No mode writes a planning file.** The output of every mode is an artifact in the store, or a
+pull request.
 
-### How a mode attaches a child
+### Stores
 
-Attach the child in the same call that creates it. `gh` 2.100.0 and later has the flag
-natively.
+**Where the artifacts live is a store.** `store` in `.maestro/config.json` picks it, and the
+default is `github`. Pull requests and the review stay on GitHub with every store.
 
-```bash
-gh issue create --title "<title>" --label <label> --parent <parent> --body-file <path>
-```
+| Store     | File                                                         | The artifacts are                                         |
+| --------- | ------------------------------------------------------------ | --------------------------------------------------------- |
+| `github`  | [references/stores/github.md](references/stores/github.md)   | labelled issues, sub-issues and milestones                |
+| `tracker` | [references/stores/tracker.md](references/stores/tracker.md) | what `tracker.instructions` maps, through the tracker's MCP |
 
-`gh issue edit` carries `--parent`, `--add-sub-issue`, `--remove-sub-issue` and
-`--remove-parent`, for a child that already exists. To read a tree:
+**A mode names an operation, and the store file runs it.** Every mode that touches an artifact
+reads `references/stores/<store>.md`, and uses these operations, in bold, and no other:
 
-```bash
-gh api repos/{owner}/{repo}/issues/<parent>/sub_issues
-```
+| Operation         | What it does                                                                         |
+| ----------------- | ------------------------------------------------------------------------------------ |
+| **ready**         | Make the store ready: the labels on GitHub, the MCP and the mapping on a tracker     |
+| **find projects** | List the projects, open and closed                                                   |
+| **create**        | Create an artifact of a kind under a parent, with a title and a body, and return its reference |
+| **read**          | Read an artifact's title, body, status and parent                                    |
+| **replace body**  | Replace the whole body, then read it back and compare                                |
+| **children**      | List an artifact's children, with the kind and the status of each                    |
+| **milestones**    | List or create the project's milestones, and set an artifact's milestone             |
+| **close**         | Mark an artifact done                                                                |
+| **link PR**       | The line a pull request body carries so that merging it closes the task, and how to find the task from a pull request |
 
-**Fallback, for a direct REST call or a `gh` older than 2.100.0.** The `sub_issues`
-endpoint takes the child's `id`, and never its issue number, and `gh` must send it as an
-integer with `-F`. `-f` sends a string, and the API answers
-`422 ... is not of type integer`. This is the only copy of that trap.
+**Every command and every trap of a store lives in its store file**, and in no mode file. A
+store that does a new job adds it to its file, and the modes do not change.
 
-**No mode writes a planning file.** The output of every mode is a GitHub issue or a pull
-request.
+When `store` is `tracker` and `tracker.instructions` is empty, the mode asks the user for the
+mapping once, then offers to save it to `.maestro/config.json`.
 
 ### Methods
 
-**The core is method-neutral.** The tree, the labels and the modes are the same for Scrum,
+**The core is method-neutral.** The tree, the stores and the modes are the same for Scrum,
 Kanban, RFCs or no method at all, and a team picks its method with `method` in
 `.maestro/config.json`. The default needs nothing more.
 
-When `method` is `shape-up`, `init`, `spec` and `sync` read [references/methods/shape-up.md](references/methods/shape-up.md) and apply its section for their mode: the Shape Up preset changes words, never labels, and reads a milestone as a scope.
+When `method` is `shape-up`, `init`, `spec` and `sync` read [references/methods/shape-up.md](references/methods/shape-up.md) and apply its section for their mode: the Shape Up preset changes words, never the kinds, and reads a milestone as a scope.
 
-## The five tree modes
+## The tree modes
 
-| Mode         | Command                     | What it does                                                        | Output                     |
-| ------------ | --------------------------- | ------------------------------------------------------------------- | -------------------------- |
-| **init**     | `/maestro:maestro init`     | Opens the project issue, with a fixed body, and creates missing labels | Project issue            |
-| **research** | `/maestro:maestro research` | Reads five sources in parallel, grills last                         | Research issue             |
-| **spec**     | `/maestro:maestro spec`     | Writes the requirements, then proposes the task issues              | Spec issue, task issues    |
-| **build**    | `/maestro:maestro build`    | Takes one task issue, writes the code, opens the draft pull request | Code, and a pull request   |
-| **sync**     | `/maestro:maestro sync`     | Reads the tree and writes progress per spec into the project issue, one way | A progress section that is true |
+| Mode         | Command                     | What it does                                                         | Output                          |
+| ------------ | --------------------------- | -------------------------------------------------------------------- | ------------------------------- |
+| **setup**    | `/maestro:maestro setup`    | Once per repository: asks for each value, writes the configuration, the memory index and the labels | `.maestro/config.json`, a ready store |
+| **init**     | `/maestro:maestro init`     | Once per project: opens the project with a fixed body, and its milestones | Project                    |
+| **research** | `/maestro:maestro research` | Reads five sources in parallel, grills last                          | Research                        |
+| **spec**     | `/maestro:maestro spec`     | Writes the requirements, then proposes the tasks                     | Spec, tasks                     |
+| **build**    | `/maestro:maestro build`    | Takes one task, writes the code, opens the draft pull request        | Code, and a pull request        |
+| **sync**     | `/maestro:maestro sync`     | Reads the tree and writes progress per spec into the project, one way | A progress section that is true |
 
 ### How one project runs
 
-1. `/maestro:maestro init` opens the project issue.
-2. `/maestro:maestro research` explores, then grills, then writes a research issue under it.
-3. `/maestro:maestro spec` writes the spec issue, then proposes the task issues. The author
-   approves them.
-4. `/maestro:maestro build` takes one task issue, asks for native plan mode, writes the
-   code, and opens a draft pull request that closes the task.
+0. `/maestro:maestro setup` sets the repository up, once. Run it again to change a value.
+1. `/maestro:maestro init` opens the project.
+2. `/maestro:maestro research` explores, then grills, then writes a research artifact under it.
+3. `/maestro:maestro spec` writes the spec, then proposes the tasks. The author approves them.
+4. `/maestro:maestro build` takes one task, asks for native plan mode, writes the code, and
+   opens a draft pull request that closes the task.
 5. `/maestro:maestro sync` writes the progress per spec into the progress section of the
-   project issue, and to the board too when one is configured.
+   project, and to the board too when one is configured.
 
-Not every project needs every mode. A small fix needs one task issue and a build.
+Not every project needs every mode. A small fix needs one task and a build.
 
 ## Reviewing a diff
 
@@ -168,21 +179,21 @@ every time.
 
 **With an argument** (`/maestro:maestro spec`), read the matching file under Modes below,
 then follow it. A request in words, such as "post the PR to Slack", goes to the matching mode
-in the same way. An optional second argument can follow the mode, such as an issue number.
+in the same way. An optional second argument can follow the mode, such as a reference.
 
 **With no argument** (`/maestro:maestro`):
 
-1. Find the projects: `gh issue list --label maestro:project --state all`.
+1. Read the store file, then **find projects**.
 2. Ask the user to continue one of them, or to start a new one.
 3. Ask which mode to run.
-4. Pass the project issue number to the mode, so it asks nothing you already know.
+4. Pass the project's reference to the mode, so it asks nothing you already know.
 
 ## Shared conventions
 
 ### Shared project memory
 
 Durable, cross-cutting knowledge lives in the memory directory (`memoryDir`, default
-`docs/memory/`), indexed by its `MEMORY.md`, which loads into every session through a pointer
+`.maestro/memory/`), indexed by its `MEMORY.md`, which loads into every session through a pointer
 in the repository's `CLAUDE.md`. The format and the rules are in **[memory.md](memory.md)**.
 
 - **Read it** in `research` and `spec`: scan the index before exploring, so that nothing
@@ -192,16 +203,16 @@ in the repository's `CLAUDE.md`. The format and the rules are in **[memory.md](m
 
 ### Pull request shape
 
-A task issue is the unit a pull request closes, and a pull request closes one or more tasks.
-The size, the exclusions and the five ways to split are in
+A task is the unit a pull request closes, and a pull request closes one or more tasks. The
+size, the exclusions and the five ways to split are in
 **[references/pr-shape.md](references/pr-shape.md)**. Restate none of its numbers anywhere
 else.
 
 - **`spec`** sizes each requirement as one concern and one vertical slice.
-- **`build`** opens the pull request with a `Closes #<task>` line. When the branch carries two
-  concerns, it offers a second task issue before the pull request opens.
+- **`build`** opens the pull request with the store's **link PR** line. When the branch
+  carries two concerns, it offers a second task before the pull request opens.
 
-A discovery during the work becomes a task issue. **It never extends an open pull request.**
+A discovery during the work becomes a task. **It never extends an open pull request.**
 
 ### Native Claude Code features
 
@@ -210,7 +221,7 @@ Maestro uses what is built in, and re-implements none of it.
 - **Plan mode.** `research` and `spec` are read-only. `build` asks for native plan mode
   before it writes code.
 - **Task tracking.** `build` uses `TaskCreate`, `TaskUpdate` and `TaskList` for the working
-  set inside one session. The task issue stays the cross-session record.
+  set inside one session. The task in the store stays the cross-session record.
 - **Blueprints.** A blueprint is a markdown file that states what good looks like on one part
   of the repository. The blueprint map (`blueprintMap`) ties paths to blueprints. Every mode
   reads the blueprint for the paths it touches, and restates none of its rules. With no map,
@@ -224,59 +235,56 @@ Maestro uses what is built in, and re-implements none of it.
 ### Sub-agents
 
 Use sub-agents for any work that gains from isolated context or from running in parallel:
-mapping an architecture, tracing a data flow, reading several issues, understanding a
+mapping an architecture, tracing a data flow, reading several artifacts, understanding a
 dependency.
 
 - **Name the blueprint in every sub-agent prompt.** A sub-agent starts with its own context,
   and inherits nothing you have read.
+- **Name the store file too**, when the sub-agent reads or writes an artifact.
 - **Fire independent sub-agents in one message**, so that they run at the same time.
 - Do not use one for a single known file, a small edit, or a step whose answer you hold.
 
-### Writing an issue body
+### Writing a body
 
-Every mode writes an issue body, and `spec`, `build` and the open-questions gate edit one
-that exists. A body is the record of a project, so a lost body loses the work above it.
+Every mode writes a body, and `spec`, `build` and the open-questions gate edit one that
+exists. A body is the record of a project, so a lost body loses the work above it.
 
-- **`gh issue edit --body-file` replaces the whole body.** An edit that adds one line
-  rewrites the whole document.
-- **An empty body is accepted.** `gh` writes it, exits `0` and prints the issue URL. A script
-  inside a quoted command substitution that produces nothing empties the body, and nothing
-  says so.
-- **Read the body back before you report the edit.** Exit `0` is not proof:
-
-```bash
-gh issue view <n> --json body --template '{{.body}}' | diff - <path>
-```
+**Read the body back after every write, and compare it with what you wrote.** A write can
+report success and leave the body empty, unchanged or wrong, and no store says so. Report an
+edit only after the read-back matches. The store file gives the commands and the traps of its
+store, under **create** and **replace body**.
 
 ### The open-questions gate
 
-An issue with unresolved open questions blocks the work that depends on them.
+An artifact with unresolved open questions blocks the work that depends on them.
 
 1. List them for the user.
 2. Work through them one at a time: explore the codebase, present the trade-offs.
-3. Resolve each one, or mark it **deferred** with a reason, and edit the issue.
+3. Resolve each one, or mark it **deferred** with a reason, then **replace body** of the
+   artifact.
 
 A deferred question is acceptable, because the team then chose to go on with the uncertainty.
 An unaddressed one is not.
 
 ### Asking the user
 
-Use `AskUserQuestion` for every structured choice: picking a project, approving the task issues,
-resolving an open question, confirming a namespace. Use plain text only when the answer is
-free-form.
+Use `AskUserQuestion` for every structured choice: picking a project, approving the tasks,
+resolving an open question, confirming a namespace, confirming a tracker mapping. Use plain
+text only when the answer is free-form.
 
 ### Context
 
 - **Project name.** Kebab-case. Read it from the `<slug>` part of the branch, or from the
-  project issue.
+  project's title.
 - **Namespace.** Derived from the project name by `spec`, and confirmed with the user.
 
 ## Modes
 
-- [init/SKILL.md](init/SKILL.md) — open the project issue, and create missing labels
-- [research/SKILL.md](research/SKILL.md) — five sources, the grilling last, a research issue
-- [spec/SKILL.md](spec/SKILL.md) — the requirements, and the task issues
-- [build/SKILL.md](build/SKILL.md) — build one task issue, and open the pull request
+- [setup/SKILL.md](setup/SKILL.md) — set the repository up: the configuration, the memory index, the store
+- [init/SKILL.md](init/SKILL.md) — open the project, and its milestones
+- [research/SKILL.md](research/SKILL.md) — five sources, the grilling last, a research artifact
+- [spec/SKILL.md](spec/SKILL.md) — the requirements, and the tasks
+- [build/SKILL.md](build/SKILL.md) — build one task, and open the pull request
 - [sync/SKILL.md](sync/SKILL.md) — read the tree, and write the progress section
 - [review/SKILL.md](review/SKILL.md) — review a pull request against the team's blueprints
 - [announce/SKILL.md](announce/SKILL.md) — announce a pull request in the team's chat
@@ -284,6 +292,10 @@ free-form.
 Shared references:
 
 - [memory.md](memory.md) — shared project memory
+- [references/stores/github.md](references/stores/github.md) — each store operation on
+  GitHub Issues, its commands and its traps
+- [references/stores/tracker.md](references/stores/tracker.md) — each store operation on a
+  tracker, through its MCP
 - [references/pr-shape.md](references/pr-shape.md) — pull request size, one concern per pull
   request, how to split
 - [references/review-risk.md](references/review-risk.md) — what a reviewer reads first

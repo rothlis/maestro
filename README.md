@@ -1,12 +1,12 @@
 # Maestro
 
-Maestro is a Claude Code plugin that runs a project from the decision to build it to the merged code. The brief, wherever you write it, says why. The work lives in GitHub as a tree of issues, and Maestro reviews each pull request against your team's own standards.
+Maestro is a Claude Code plugin that runs a project from the decision to build it to the merged code. The brief, wherever you write it, says why. The work lives as a tree of issues, in GitHub or in your tracker, and Maestro reviews each pull request against your team's own standards.
 
 It works with any method. Teams that use [Shape Up](https://basecamp.com/shapeup) can turn on a preset that adds its words and the hill chart.
 
 ## What it does
 
-A project becomes a tree of labelled issues:
+A project becomes a tree, by default of labelled GitHub issues:
 
 ```
 Project issue        maestro:project    links to the brief, and a progress section
@@ -16,11 +16,14 @@ Project issue        maestro:project    links to the brief, and a progress secti
 └── Spec issue
 ```
 
-A spec can belong to a milestone, which is a stage of the project, such as a phase or a release. Milestones are plain GitHub milestones, and the task issues of a spec carry the spec's milestone.
+A spec can belong to a milestone, which is a stage of the project, such as a phase or a release, and its tasks carry the spec's milestone.
+
+By default these are GitHub issues and milestones. A team that keeps its work in Linear, Jira or another tracker sets `"store": "tracker"` and describes in one paragraph how each artifact maps onto it. Maestro then uses that tracker's MCP server. Pull requests and the review stay on GitHub either way.
 
 | Command                     | What it does                                                            |
 | --------------------------- | ----------------------------------------------------------------------- |
-| `/maestro:maestro init`     | Opens the project issue, creates the labels and any milestones          |
+| `/maestro:maestro setup`    | Asks for your settings once per repository and writes them              |
+| `/maestro:maestro init`     | Opens the project issue and any milestones                              |
 | `/maestro:maestro research` | Reads memory, the code, prior art, your docs and chat, then grills you  |
 | `/maestro:maestro spec`     | Writes the requirements, then proposes the task issues                  |
 | `/maestro:maestro build`    | Takes one task, plans, writes the code, opens a draft pull request      |
@@ -30,7 +33,7 @@ A spec can belong to a milestone, which is a stage of the project, such as a pha
 
 Progress is shown as counts (tasks closed of total, pull requests in flight, open questions), never as a percentage. The task total grows as the team finds work, so a percentage would go down on good news.
 
-Durable lessons go to shared project memory (`docs/memory/` by default). Each session loads the index, so nobody works out the same fact twice.
+Durable lessons go to shared project memory (`.maestro/memory/` by default). Each session loads the index, so nobody works out the same fact twice.
 
 ## The review
 
@@ -57,11 +60,13 @@ You need `gh` (2.100 or later, for `--parent`), signed in to your repository, an
 
 ## Set it up in your repository
 
-Nothing is required. Every setting has a default. To change one, copy what you need from [`templates/`](templates/):
+Run `/maestro:maestro setup` once. It asks one question at a time and writes what you choose:
 
-- `.maestro/config.json`: the base branch, the branch pattern, the method (`default` or `shape-up`), the memory directory, the blueprint map, your Slack channel and your board.
-- `.maestro/blueprints/map.json` and one `README.md` per blueprint: your standards, for the review.
-- `docs/memory/MEMORY.md`: the empty memory index. Add one line to your `CLAUDE.md` that tells Claude to read it.
+- `.maestro/config.json`: the method (`default` or `shape-up`), the store (`github` or `tracker`), the base branch, the branch pattern, the memory directory, the blueprint map, your Slack channel and your board.
+- `.maestro/memory/MEMORY.md`: the empty memory index, and, if you agree, the line in your `CLAUDE.md` that loads it.
+- `.maestro/blueprints/`: example blueprints to start from, if you want them. They are your standards, for the review.
+
+Run it again to change a setting. Every setting has a default, so Maestro also works with no setup at all. The files it writes come from [`templates/`](templates/).
 
 With `"method": "shape-up"`, the project is called a pitch, the brief is the shaped pitch, each milestone is a scope, and sync draws one hill per scope.
 
