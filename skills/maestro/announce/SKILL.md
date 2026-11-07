@@ -45,7 +45,7 @@ the channel name to its id with the channel search tool, once per invocation.
 **Several pull requests, or "the stack"** → resolve each one, then **take the merge order
 from `baseRefName`**, never from the order you were given or from the numbers. The one whose
 base is the base branch is `[1/N]`, the one based on its branch is `[2/N]`, and so on. A wrong
-merge order is the one error the stack shape exists to prevent.
+merge order is the one error a stack exists to prevent.
 
 Record `isDraft` for each one, and continue. A draft becomes part of the question in step 5.
 
@@ -61,7 +61,7 @@ request or its diff does not say.
 
 #### Touched surfaces
 
-Both shapes start from the blueprint map, at `blueprintMap` in the config
+Both formats start from the blueprint map, at `blueprintMap` in the config
 (default `.maestro/blueprints/map.json`). People come from the map, and never from memory.
 
 1. Match each changed file against the `paths` of each surface. A file under a surface's
@@ -156,12 +156,12 @@ That is not a reason to write mrkdwn.
 **Reviewers:** <@id> · FYI `<org/team>` · Approved by maestro review
 ```
 
-**A blank line separates each line of the message**, in both shapes, so that each line reads
+**A blank line separates each line of the message**, in both formats, so that each line reads
 on its own in the channel. The exception is a bulleted list, which stays together.
 
 - **The headline says what the pull request does**, for a reader who does not know the
-  project. The number opens the link text as `#<number>`, then the pitch, then the what.
-  Strip the cycle prefix from the title, if there is one. Keep it to one line, about 12 words.
+  project. The number opens the link text as `#<number>`, then the project, then the what.
+  Strip the `branchPattern` period prefix from the title, such as `Sprint 4:`, if there is one. Keep it to one line, about 12 words.
 - **The "Why?" line is one sentence**, about 20 words, taken from the Why section of the
   body. It states the problem for a reader, and not the mechanism of the fix.
 - **The footer** follows step 3. It is one line, and the message has no thread reply. A
@@ -181,7 +181,7 @@ Behind the `<flag>` flag. The details and the reviews are in the thread.
 
 - **The header is a short description of what the pull requests do together**, about 8
   words, for a reader who does not know the project. For example: "Invoices that send
-  themselves". Do not start it with a stock phrase such as "Progress on". Strip the cycle
+  themselves". Do not start it with a stock phrase such as "Progress on". Strip the period
   prefix.
 - **The header links the stack page.** The page lists the pull requests, so no message does. If step 2 found no GitHub stack, link the bottom pull request, and list the pull requests at the top of the context reply: `- [n/N] **[#<number> <what it does>](<pr-url>)**`, in merge order, bottom first.
 - **"What the user gets" is two sentences, from the solution section of the spec.** The first says what the user cannot do today, and the second says what they can do with this stack. Do not describe the mechanism. If there is no spec, write it from the Why sections of the pull requests, and say so in step 5.
@@ -279,7 +279,7 @@ already makes gives the pull request two reviewers for one review.
 - **No tool edits or deletes a sent message.** Every revision is a new message, which is why
   the iteration happens in the conversation. If previews were sent to a direct message, tell
   the author to delete the stale ones.
-- Custom emoji exist only in the workspace that added them. The shapes above use standard
+- Custom emoji exist only in the workspace that added them. The formats above use standard
   emoji only.
 - A Slack Connect channel can refuse a post from an app. If the send fails for that reason,
   say so, and offer the text to paste.

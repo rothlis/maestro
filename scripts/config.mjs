@@ -1,7 +1,8 @@
 /**
  * Reads `.maestro/config.json` at the root of the repository that uses the plugin. The file
  * is optional, and each field it leaves out takes its default. A key that starts with `$`,
- * such as `$comment`, is documentation and never a setting.
+ * such as `$comment`, is documentation and never a setting. `branchPattern` is a top-level
+ * field and has no default: without it, build names the branch in plain kebab-case.
  */
 
 import { execFileSync } from "node:child_process"
@@ -15,6 +16,7 @@ export const DEFAULTS = {
   memoryDir: "docs/memory",
   blueprintMap: ".maestro/blueprints/map.json",
   prTemplate: ".github/pull_request_template.md",
+  method: "default",
 }
 
 /** The root of the worktree, or `cwd` outside a git repository. */

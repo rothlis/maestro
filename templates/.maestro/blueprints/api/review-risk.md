@@ -4,7 +4,7 @@ The risky areas of `services/api/`. The review reads this file after the plugin'
 
 - **Payments.** Any change under `services/api/payments/`, or to how an order total is computed.
 - **A database migration.** A new file under `services/api/db/migrations/`.
-- **Access to data.** A change to a query that reads orders, if it changes how the query scopes data to a shop.
+- **Access to data.** A change to a query that reads orders, if it changes how the query limits its data to one shop.
 - **A public contract.** A change to a route's request or response schema. The web app and outside clients call it directly.
 - **A deletion of data**, or a job that deletes rows.
 

@@ -7,11 +7,11 @@ This is an example blueprint for an invented shop. Replace each section with the
 - Owner: `@api-lead-handle`
 - Review team: `@your-org/api-team`
 
-## Scope
+## Paths
 
 Every file under `services/api/`. The HTTP routes, the use cases, the database access and the migrations of the orders API are in scope.
 
-## Shape
+## Structure
 
 A request goes through three layers, in this order:
 
@@ -24,7 +24,7 @@ A new feature adds one use case and the route that calls it. It does not add a f
 ## Rules
 
 1. **A route never calls `db/`.** The use case owns each rule, so a test of the use case covers it.
-2. **Each query scopes its data to a shop.** Pass `shopId` to each query that reads orders. A query without it reads the orders of every shop.
+2. **Each query limits its data to one shop.** Pass `shopId` to each query that reads orders. A query without it reads the orders of every shop.
 3. **A money amount is an integer number of cents.** A float loses cents when it adds amounts.
 4. **A migration only adds.** Drop a column in a second migration, after no code reads it.
 

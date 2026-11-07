@@ -8,7 +8,7 @@ file uses the default path.
 
 A knowledge doc pays off only if somebody reads it, and the only knowledge that reliably gets
 read is the kind that is **auto-loaded into every session's context**. Claude's native memory
-(`MEMORY.md`) works because the harness injects its index on every turn. Standalone per-pitch
+(`MEMORY.md`) works because the harness injects its index on every turn. Standalone per-project
 knowledge docs are almost never written and almost never read.
 
 Shared project memory copies the mechanic that works, but commits it to the repo so the
@@ -20,7 +20,7 @@ Shared project memory copies the mechanic that works, but commits it to the repo
 - **`docs/memory/<slug>.md`** files each hold exactly one fact, with frontmatter. The body is
   pulled into context only when a session decides a fact is relevant, from its index line.
 
-The result: cross-pitch decisions, patterns and solved problems surface on their own in
+The result: cross-project decisions, patterns and solved problems surface on their own in
 future work.
 
 ## The pointer in `CLAUDE.md`
@@ -53,7 +53,7 @@ name: <short-kebab-case-slug>
 description: <one-line summary, used to decide relevance when scanning the index>
 metadata:
   type: decision | pattern | problem | convention | reference
-  pitch: <cycle-N>/<pitch-name> # provenance: where this was learned
+  project: <project-name> # provenance: where this was learned
   date: <YYYY-MM-DD>
 ---
 
@@ -78,9 +78,9 @@ Link related facts with [[their-slug]].
 ## Read rules (research, spec)
 
 Before exploring the codebase, **scan `docs/memory/MEMORY.md`** and read any fact whose
-description looks relevant to the scope. This is the first place to look for prior decisions
+description looks relevant to the work. This is the first place to look for prior decisions
 and solved problems. It prevents re-deriving things the team already settled. It is in
-addition to the pitch's own research issues, not a replacement.
+addition to the project's own research issues, not a replacement.
 
 ## Write rules (build)
 
@@ -88,8 +88,8 @@ addition to the pitch's own research issues, not a replacement.
 solved problem worth carrying forward, record it here.
 
 Only write a fact when it is **durable and cross-cutting**: something a future, unrelated
-session would benefit from knowing. Do not mirror what the code, the git history, the shaping
-doc or `CLAUDE.md` already record. Most tasks produce no fact. A pitch that made a real
+session would benefit from knowing. Do not mirror what the code, the git history, the brief
+or `CLAUDE.md` already record. Most tasks produce no fact. A project that made a real
 architectural decision produces one or two.
 
 When writing a fact:

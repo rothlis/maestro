@@ -7,7 +7,7 @@ This is an example blueprint for an invented shop. Replace each section with the
 - Owner: `@web-lead-handle`
 - Review team: `@your-org/web-team`
 
-## Scope
+## Paths
 
 Every file under `apps/web/`: the pages, the components and the API client of the shop's storefront.
 

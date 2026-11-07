@@ -1,6 +1,6 @@
 {
   "name": "maestro",
-  "description": "Shape Up below the pitch: research, spec, build and review work as a tree of GitHub issues, with a multi-pass code review against your team's own blueprints.",
+  "description": "Run a project as a tree of GitHub issues (research, spec, build, sync) with a multi-pass code review against your team's own blueprints. Optional Shape Up preset.",
   "version": "0.1.0",
   "author": { "name": "Sebastien Rothlisberger" },
   "repository": "https://github.com/rothlis/maestro"

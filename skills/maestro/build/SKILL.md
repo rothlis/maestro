@@ -1,7 +1,7 @@
 ---
 name: build
 description: Build one task issue — read it and its spec, plan in native plan mode, write the code, open the draft pull request that closes it, and record what landed on the spec issue. This is the only maestro mode that changes code.
-argument-hint: "[task issue number, or a pitch name to pick one from]"
+argument-hint: "[task issue number, or a project name to pick one from]"
 ---
 
 # Build
@@ -33,18 +33,18 @@ means every default.
 | `memoryDir`           | `docs/memory`                       | steps 2, 10 |
 | `blueprintMap`        | `.maestro/blueprints/map.json`      | steps 4–6 |
 | `prTemplate`          | `.github/pull_request_template.md`  | step 8    |
-| `cycle.branchPattern` | none: a plain kebab-case branch     | step 8    |
+| `branchPattern`       | none: plain kebab-case              | step 8    |
 
 ## Workflow
 
 ### 1. Take a task issue
 
-Read the number from the argument. With no argument, walk down the pitch to its open tasks
+Read the number from the argument. With no argument, walk down the project to its open tasks
 and ask which one. Walk the tree rather than listing by label: a label query returns every
-open task in the repository, across every pitch.
+open task in the repository, across every project.
 
 ```bash
-gh api repos/{owner}/{repo}/issues/<pitch>/sub_issues --jq '.[] | select(.labels[].name == "maestro:spec") | .number'
+gh api repos/{owner}/{repo}/issues/<project>/sub_issues --jq '.[] | select(.labels[].name == "maestro:spec") | .number'
 gh api repos/{owner}/{repo}/issues/<spec>/sub_issues
 ```
 
@@ -57,7 +57,7 @@ A task is the leaf of a tree, and the tree holds why it exists.
 1. **The task issue.** What it delivers, its constraints, and the proof it names.
 2. **Its spec issue**, from the `**Spec**` field. Read the requirements the task names, and
    their `<details>` blocks. The acceptance criteria are what "done" means.
-3. **The research issues** of the pitch, for the architecture and the rejected alternatives.
+3. **The research issues** of the project, for the architecture and the rejected alternatives.
 4. **Shared project memory.** Scan `<memoryDir>/MEMORY.md` and read every fact whose hook
    looks relevant. See [../memory.md](../memory.md).
 
@@ -164,15 +164,17 @@ before the pull request exists.
 
 **When the branch carries two concerns, offer a second task issue before the pull request
 opens.** A mid-build discovery becomes its own task issue, and **it never extends an open pull
-request**. Create it with `spec/SKILL.md`'s task shape, as a sub-issue of the same spec.
+request**. Create it with the task body in `spec/SKILL.md`, as a sub-issue of the same spec, with the
+spec's milestone when it has one (`--milestone <title>`).
 
 ### 8. Open the draft pull request
 
-**Name the branch and the title from `cycle.branchPattern` when it is set.** With
-`cycle-<n>/<slug>`, the branch is `cycle-4/add-export-button` and the title starts with the
-same period: `Cycle 4: Add export button`. Take `<n>` from the user, or from the newest branch
-that matches the pattern. Never guess it. **Without a pattern, the branch is plain
-kebab-case**, `add-export-button`, and the title is the description alone.
+**Name the branch from `branchPattern` when it is set**, such as `"<type>/<slug>"`. `<type>`
+is the kind of change (feat, fix), so the branch is `feat/add-export-button`. `<n>` is optional
+(e.g. `sprint-<n>/<slug>`), taken from the user or the newest matching branch, never guessed.
+With `<n>`, the title starts with the same period: `Sprint 4: Add export button`. **Without
+the field, the branch is plain kebab-case**, `add-export-button`, and the title is the
+description alone.
 
 ```bash
 gh pr create --draft --base <base> --title "<title>" --body-file <path>

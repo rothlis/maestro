@@ -8,16 +8,16 @@
   "$blueprintMap": "The map that ties paths to blueprints and review teams. With no map, the review runs its generic method and says that no blueprint was found.",
   "prTemplate": ".github/pull_request_template.md",
   "$prTemplate": "The pull request template that build and announce follow, when it exists.",
-  "cycle": {
-    "$comment": "The branch name of a task. <n> is the cycle or cooldown number, <slug> the kebab-case task.",
-    "branchPattern": "cycle-<n>/<slug>"
-  },
+  "method": "default",
+  "$method": "\"default\" works with any way of planning. \"shape-up\" also reads the Shape Up preset, skills/maestro/references/methods/shape-up.md.",
+  "branchPattern": "<type>/<slug>",
+  "$branchPattern": "The branch name of a task. <type> is the kind of change, such as feat or fix, and <slug> the kebab-case task. An optional <n>, as in sprint-<n>/<slug>, comes from the user or the newest matching branch, and is never guessed. Remove the field, and build names the branch in plain kebab-case.",
   "announce": {
     "$comment": "Where announce posts a ready pull request. Remove this block, and announce asks for a channel.",
     "slackChannel": "#pull-requests"
   },
   "board": {
-    "$comment": "How sync pushes progress to your board, in free text: an MCP tool name, or a gh project command. Leave instructions empty, or remove this block, and sync writes progress to the pitch issue only.",
+    "$comment": "How sync pushes progress to your board, in free text: an MCP tool name, or a gh project command. Leave instructions empty, or remove this block, and sync writes progress to the project issue only.",
     "instructions": ""
   },
   "prShape": {

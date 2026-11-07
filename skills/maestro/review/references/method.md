@@ -108,7 +108,7 @@ These are **reminders, not rules**: things worth checking when the diff touches 
 - **Authorization on the wrong subject.** A helper that sets or changes an entity's subject type before the check can make an instance check pass against the wrong type. Authorize the real, typed instance.
 - **A hidden menu item is not a guard.** Filtering navigation by ability is cosmetic. A page or a route needs its own guard, because a direct URL skips the menu.
 - **One gate per resource.** Two code paths that decide visibility for the same resource drift apart. A listing for users and a listing for admins must both go through the same gate.
-- **A handler that resolves its dependencies from a root container** that holds full rights skips the caller's role. Resolve them from the request's own scope.
+- **A handler that resolves its dependencies from a root container** that holds full rights skips the caller's role. Resolve them from the container of the request.
 
 ## What NOT to flag
 

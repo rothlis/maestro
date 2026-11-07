@@ -1,6 +1,6 @@
 ---
 name: maestro
-description: Orchestrate Shape Up work below the pitch — open the pitch issue, research a topic, write the spec and its requirements, build one task, sync progress to the board, review a pull request against the team's blueprints, and announce a pull request in the team's chat. The artifacts are a tree of labelled GitHub issues, and durable learnings go to shared project memory. Use when starting a pitch, researching, writing requirements, building a task, updating the board, reviewing a pull request ("review my changes"), or announcing a pull request ("post the PR to Slack", "announce this PR", "post the stack").
+description: Orchestrate the work once a team has decided to build something — open the project issue, research a topic, write the spec and its requirements, build one task, sync progress to the board, review a pull request against the team's blueprints, and announce a pull request in the team's chat. The artifacts are a tree of labelled GitHub issues, and durable learnings go to shared project memory. Use when starting a project, researching, writing requirements, building a task, updating the board, reviewing a pull request ("review my changes"), or announcing a pull request ("post the PR to Slack", "announce this PR", "post the stack").
 argument-hint: "<init|research|spec|build|sync|review|announce> [optional argument]"
 metadata:
   tags: research,requirements,execution,shared-memory
@@ -9,12 +9,13 @@ metadata:
 
 # Maestro
 
-Maestro runs the part of a Shape Up pitch that sits after the bet. **Your shaping doc (any
-tool) keeps the argument, and GitHub holds the work.**
+Maestro runs the work once the team has decided to build something. **Your brief keeps the
+argument, and GitHub holds the work.** A brief is any PRD, RFC or doc that says why, in any
+tool. A project needs none.
 
-A pitch is a tree of labelled GitHub issues. An agent keeps that tree current, so the person
-who picks a pitch up finds its research, its requirements and its open tasks in one place,
-and finds them true.
+A project is a tree of labelled GitHub issues. An agent keeps that tree current, so the
+person who picks a project up finds its research, its requirements and its open tasks in one
+place, and finds them true.
 
 Durable, cross-cutting knowledge does not live in the tree. It lives in shared project memory,
 which loads into every session on its own. See [memory.md](memory.md).
@@ -30,17 +31,22 @@ and every field has a default.
 | `memoryDir`            | `docs/memory`                       | every mode that reads or writes memory     |
 | `blueprintMap`         | `.maestro/blueprints/map.json`      | every mode that reads a blueprint          |
 | `prTemplate`           | `.github/pull_request_template.md`  | `build`                                    |
-| `cycle.branchPattern`  | `cycle-<n>/<slug>`                  | the cycle and the pitch name, see Context  |
+| `branchPattern`        | none: plain kebab-case              | `build`, the project name, see Context     |
+| `method`               | `default`                           | `init`, `spec`, `sync`, see Methods        |
 | `announce.slackChannel` | none: `announce` asks for a channel | `announce`                              |
-| `board.instructions`   | none: `sync` writes the pitch issue | `sync`                                     |
+| `board.instructions`   | none: `sync` writes the project issue | `sync`                                   |
 
 Read the file once at the start of a mode. A missing file or a missing field takes the
 default.
 
+`branchPattern` is the branch name of a task, such as `"<type>/<slug>"`. `<type>` is the kind
+of change (feat, fix). `<n>` is optional (e.g. `sprint-<n>/<slug>`), taken from the user or the
+newest matching branch, never guessed. Without the field, the branch is plain kebab-case.
+
 ## The tree
 
 ```
-Pitch issue                         maestro:pitch      the root: links, scope names, progress
+Project issue                       maestro:project    the root, a pointer: links, progress
 ├── Research issue                  maestro:research   what was unknown before the work
 ├── Spec issue                      maestro:spec       the requirements, as its sections
 │   ├── Task issue                  maestro:task       the unit a pull request closes
@@ -49,17 +55,26 @@ Pitch issue                         maestro:pitch      the root: links, scope na
     └── Task issue
 ```
 
-**The pitch issue is a pointer, not a document.** Its body holds three things: the fields that
-link the shaped pitch and the board, the scope names under `## Scopes`, and a progress section
-between `<!-- maestro:progress:start -->` and `<!-- maestro:progress:end -->`. `init` writes
-the first two. `sync` owns the progress section, and no other mode writes inside it.
+**The spec is the unit of progress.** A requirement lives inside a spec, as a section, and it
+carries a namespaced identifier such as `BIE-REQ-4`.
+
+**A spec may carry a milestone.** A milestone is an optional stage of the project, such as a
+phase or a release. It is a native GitHub milestone named `<project-slug>/<milestone-name>`,
+because milestones are repository-wide and the prefix ties them to one project. A spec
+belongs to one milestone at most, its tasks take the spec's milestone, and `sync` groups
+progress by milestone.
+
+**The project issue is a pointer, not a document.** Its body holds the fields that link the
+brief and the board, and a progress section between `<!-- maestro:progress:start -->` and
+`<!-- maestro:progress:end -->`. `init` writes the fields. `sync` owns the progress section,
+and no other mode writes inside it.
 
 **A body reference is not enough.** The parent and the child must be joined through the
-sub-issues API, so that GitHub itself shows the tree and one query finds every pitch.
+sub-issues API, so that GitHub itself shows the tree and one query finds every project.
 
 | Issue    | Label              |
 | -------- | ------------------ |
-| Pitch    | `maestro:pitch`    |
+| Project  | `maestro:project`  |
 | Research | `maestro:research` |
 | Spec     | `maestro:spec`     |
 | Task     | `maestro:task`     |
@@ -87,42 +102,39 @@ endpoint takes the child's `id`, and never its issue number, and `gh` must send 
 integer with `-F`. `-f` sends a string, and the API answers
 `422 ... is not of type integer`. This is the only copy of that trap.
 
-### The two decompositions
-
-A pitch decomposes two ways at the same time, and the two are independent.
-
-- **Scopes** come from shaping, and the pitch issue names them.
-- **Specs** come from `/maestro:maestro spec`. A spec covers several scopes, one scope, or
-  none.
-
-**Neither is a level of the other.** Requirements are not scopes. A requirement lives inside
-a spec, as a section, and it carries a namespaced identifier such as `BIE-REQ-4`.
-
 **No mode writes a planning file.** The output of every mode is a GitHub issue or a pull
 request.
+
+### Methods
+
+**The core is method-neutral.** The tree, the labels and the modes are the same for Scrum,
+Kanban, RFCs or no method at all, and a team picks its method with `method` in
+`.maestro/config.json`. The default needs nothing more.
+
+When `method` is `shape-up`, `init`, `spec` and `sync` read [references/methods/shape-up.md](references/methods/shape-up.md) and apply its section for their mode: the Shape Up preset changes words, never labels, and reads a milestone as a scope.
 
 ## The five tree modes
 
 | Mode         | Command                     | What it does                                                        | Output                     |
 | ------------ | --------------------------- | ------------------------------------------------------------------- | -------------------------- |
-| **init**     | `/maestro:maestro init`     | Opens the pitch issue, with a fixed body, and creates missing labels | Pitch issue                |
+| **init**     | `/maestro:maestro init`     | Opens the project issue, with a fixed body, and creates missing labels | Project issue            |
 | **research** | `/maestro:maestro research` | Reads five sources in parallel, grills last                         | Research issue             |
 | **spec**     | `/maestro:maestro spec`     | Writes the requirements, then proposes the task issues              | Spec issue, task issues    |
 | **build**    | `/maestro:maestro build`    | Takes one task issue, writes the code, opens the draft pull request | Code, and a pull request   |
-| **sync**     | `/maestro:maestro sync`     | Reads the tree and writes scope progress into the pitch issue, one way | A progress section that is true |
+| **sync**     | `/maestro:maestro sync`     | Reads the tree and writes progress per spec into the project issue, one way | A progress section that is true |
 
-### How one pitch runs
+### How one project runs
 
-1. `/maestro:maestro init` opens the pitch issue.
+1. `/maestro:maestro init` opens the project issue.
 2. `/maestro:maestro research` explores, then grills, then writes a research issue under it.
 3. `/maestro:maestro spec` writes the spec issue, then proposes the task issues. The author
-   approves them, and that moment is the spec review huddle.
+   approves them.
 4. `/maestro:maestro build` takes one task issue, asks for native plan mode, writes the
    code, and opens a draft pull request that closes the task.
-5. `/maestro:maestro sync` writes the scope progress into the progress section of the pitch
-   issue, and to the board too when one is configured.
+5. `/maestro:maestro sync` writes the progress per spec into the progress section of the
+   project issue, and to the board too when one is configured.
 
-Not every pitch needs every mode. A small fix needs one task issue and a build.
+Not every project needs every mode. A small fix needs one task issue and a build.
 
 ## Reviewing a diff
 
@@ -142,7 +154,7 @@ finding and starts a re-check, until the review approves or only declined findin
 | ------------ | --------------------------- | -------------------------------------------------------------------- | ------------------------- |
 | **announce** | `/maestro:maestro announce` | Writes the team's announcement and its reviewers, asks once, then posts it | A chat message, PR ready |
 
-It sits outside the tree: any pull request can use it, inside a pitch or not. **A request to
+It sits outside the tree: any pull request can use it, inside a project or not. **A request to
 post, share or announce a pull request in chat goes to this mode**, whatever words it uses.
 
 `plan` and `pr-shape` are not modes. `build` applies the pull request shape standard before a
@@ -160,10 +172,10 @@ in the same way. An optional second argument can follow the mode, such as an iss
 
 **With no argument** (`/maestro:maestro`):
 
-1. Find the pitches: `gh issue list --label maestro:pitch --state all`.
+1. Find the projects: `gh issue list --label maestro:project --state all`.
 2. Ask the user to continue one of them, or to start a new one.
 3. Ask which mode to run.
-4. Pass the pitch issue number to the mode, so it asks nothing you already know.
+4. Pass the project issue number to the mode, so it asks nothing you already know.
 
 ## Shared conventions
 
@@ -189,7 +201,7 @@ else.
 - **`build`** opens the pull request with a `Closes #<task>` line. When the branch carries two
   concerns, it offers a second task issue before the pull request opens.
 
-A mid-pitch discovery becomes a task issue. **It never extends an open pull request.**
+A discovery during the work becomes a task issue. **It never extends an open pull request.**
 
 ### Native Claude Code features
 
@@ -223,7 +235,7 @@ dependency.
 ### Writing an issue body
 
 Every mode writes an issue body, and `spec`, `build` and the open-questions gate edit one
-that exists. A body is the record of a pitch, so a lost body loses the work above it.
+that exists. A body is the record of a project, so a lost body loses the work above it.
 
 - **`gh issue edit --body-file` replaces the whole body.** An edit that adds one line
   rewrites the whole document.
@@ -249,21 +261,19 @@ An unaddressed one is not.
 
 ### Asking the user
 
-Use `AskUserQuestion` for every structured choice: picking a pitch, approving the task issues,
+Use `AskUserQuestion` for every structured choice: picking a project, approving the task issues,
 resolving an open question, confirming a namespace. Use plain text only when the answer is
 free-form.
 
 ### Context
 
-- **Cycle or cooldown.** Read it from the branch name, against `cycle.branchPattern` (default
-  `cycle-<n>/<slug>`). If the branch does not match the pattern, ask the user.
-- **Pitch name.** Kebab-case. Read it from the `<slug>` part of the branch, or from the pitch
-  issue.
-- **Namespace.** Derived from the pitch name by `spec`, and confirmed with the user.
+- **Project name.** Kebab-case. Read it from the `<slug>` part of the branch, or from the
+  project issue.
+- **Namespace.** Derived from the project name by `spec`, and confirmed with the user.
 
 ## Modes
 
-- [init/SKILL.md](init/SKILL.md) — open the pitch issue, and create missing labels
+- [init/SKILL.md](init/SKILL.md) — open the project issue, and create missing labels
 - [research/SKILL.md](research/SKILL.md) — five sources, the grilling last, a research issue
 - [spec/SKILL.md](spec/SKILL.md) — the requirements, and the task issues
 - [build/SKILL.md](build/SKILL.md) — build one task issue, and open the pull request

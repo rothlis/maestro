@@ -656,7 +656,7 @@ if (hasSourceCode) {
 
 Your pass is **error handling**: silent failures, empty or over-broad catches, fallbacks that swallow a real error.
 
-**A \`catch\` block is not the only shape a silent failure takes.** Read every failure path the diff adds. Then read every older failure path that a new fault of the diff now reaches, such as a new timeout that ends in an old \`.catch(() => [])\`. The old line is unmodified, and the diff still made it reachable, so it is a finding. Hunt these three as well:
+**A \`catch\` block is not the only form a silent failure takes.** Read every failure path the diff adds. Then read every older failure path that a new fault of the diff now reaches, such as a new timeout that ends in an old \`.catch(() => [])\`. The old line is unmodified, and the diff still made it reachable, so it is a finding. Hunt these three as well:
 
 1. **A return that substitutes a plausible answer.** A function that cannot compute its result must fail. A zero, an empty list, \`undefined\` or the happy-path value each read as a real answer, so the caller cannot tell the two apart. A default is correct only when the caller can. An exit code hides this: \`lsof\` and \`git grep\` exit 1 both when nothing matches and when they fail.
 2. **A branch that covers a handled outcome and a fault together.** The fault gets its own message, at \`error\`. One shared \`warn\` over the two hides it.
@@ -1005,7 +1005,7 @@ ${JSON.stringify(
   2,
 )}
 
-Emit exactly this shape, dropping any empty section:
+Emit exactly this format, dropping any empty section:
 
 # Maestro Review — <scope>
 

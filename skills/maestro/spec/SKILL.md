@@ -1,32 +1,34 @@
 ---
 name: spec
-description: Write the spec issue under a pitch — the requirements for a scope of work, as sections of one GitHub issue — then propose the task issues a pull request will close, and create them after the author approves.
-argument-hint: "[optional scope name, or the number of a spec issue to iterate on]"
+description: Write the spec issue under a project — the requirements for one part of the work, as sections of one GitHub issue, in at most one milestone — then propose the task issues a pull request will close, and create them after the author approves.
+argument-hint: "[optional spec name, or the number of a spec issue to iterate on]"
 ---
 
 # Spec issue
 
-A spec says **what** the product does when the work is done. It never says how the code
-works. The spec is one GitHub issue under the pitch issue, and its requirements are its
-sections.
+If `.maestro/config.json` sets `method` to `shape-up`, read `../references/methods/shape-up.md` and apply its section for this mode.
 
-The spec then creates the first task issues. **The moment the author approves those tasks is
-the spec review huddle.** After it, a task is cheap: anybody adds one when the work appears.
+A spec says **what** the product does when the work is done. It never says how the code
+works. The spec is one GitHub issue under the project issue, and its requirements are its
+sections. **The spec is the unit of progress**: `/maestro:maestro sync` counts per spec.
+
+The spec then creates the first task issues. Once the author approves them, a task is cheap:
+anybody adds one when the work appears.
 
 Use ultrathink for maximum reasoning depth.
 
-**Nothing forces the size of a spec.** The author decides it. A scope that carries unknowns
-earns a spec of its own.
+**Nothing forces the size of a spec.** The author decides it. A part of the work that carries
+unknowns earns a spec of its own.
 
 ## Namespace system
 
-Every requirement carries a namespaced identifier, so that two specs in one pitch never
+Every requirement carries a namespaced identifier, so that two specs in one project never
 collide.
 
-**The base namespace comes from the pitch name.** Split the kebab-case name on hyphens, take
+**The base namespace comes from the project name.** Split the kebab-case name on hyphens, take
 the first letter of each word, and put it in upper case.
 
-| Pitch                     | Namespace | Example      |
+| Project                   | Namespace | Example      |
 | ------------------------- | --------- | ------------ |
 | `bulk-invoice-export`     | `BIE`     | `BIE-REQ-1`  |
 | `fix-login-redirect-loop` | `FLRL`    | `FLRL-REQ-3` |
@@ -35,68 +37,74 @@ the first letter of each word, and put it in upper case.
 Confirm the namespace with the user, and write it in the `**Namespace**` field of the issue
 body.
 
-### The scope segment
+### The milestone segment
 
-A pitch that spans several scopes can add a scope segment, so that identifiers never collide
-across specs: `<PITCH>-<SCOPE>-REQ-N`. Derive the segment the same way, or take a short tag
-of one to three letters from the user.
+A project with several milestones can add a milestone segment, so that identifiers never
+collide across specs: `<PROJECT>-<MILESTONE>-REQ-N`. Derive the segment the same way from the
+milestone name, or take a short tag of one to three letters from the user.
 
-| Pitch          | Scope             | Namespace | Example       |
-| -------------- | ----------------- | --------- | ------------- |
-| `team-billing` | `seat-limits`     | `TB-SL`   | `TB-SL-REQ-1` |
-| `team-billing` | `invoice-history` | `TB-IH`   | `TB-IH-REQ-1` |
+| Project        | Milestone                      | Namespace | Example       |
+| -------------- | ------------------------------ | --------- | ------------- |
+| `team-billing` | `team-billing/seat-limits`     | `TB-SL`   | `TB-SL-REQ-1` |
+| `team-billing` | `team-billing/invoice-history` | `TB-IH`   | `TB-IH-REQ-1` |
 
 The segment is optional and never forced:
 
-- **A pitch with one spec stays flat** (`TB-REQ-N`).
-- **A second spec in the same pitch is the signal.** Suggest a segment for the new spec. The
-  user can decline. Do not relabel the first spec unless the user asks for it.
+- **A project with one spec stays flat** (`TB-REQ-N`).
+- **A second spec in the same project is the signal.** Suggest a segment for the new spec.
+  The user can decline. Do not relabel the first spec unless the user asks for it.
 
-**Collision rule.** If two scopes derive the same segment, such as `publish-list` and
+**Collision rule.** If two milestones derive the same segment, such as `publish-list` and
 `plan-limits` which both give `PL`, extend one with its next significant letter (`PUL` and
 `PLL`), or ask the user for a short tag. The same rule applies to the base namespace.
 
 ## Workflow
 
-### 1. Find the pitch issue
+### 1. Find the project issue
 
 ```bash
-gh issue list --label maestro:pitch --state all --search "<pitch name>" --json number,title
+gh issue list --label maestro:project --state all --search "<project name>" --json number,title
 ```
 
-If no pitch issue exists, offer to run `/maestro:maestro init` first. A spec issue is a
-sub-issue of the pitch issue, so the pitch issue must exist before this mode writes anything.
+If no project issue exists, offer to run `/maestro:maestro init` first. A spec issue is a
+sub-issue of the project issue, so the project issue must exist before this mode writes
+anything.
 
 If the argument is an issue number labelled `maestro:spec`, read that issue. This is
 iteration mode. Go to step 7.
 
-### 2. Count the specs the pitch already holds
+### 2. Pick the milestone
+
+A milestone is a stage of the project: a native GitHub milestone named
+`<project-slug>/<milestone-name>`. Milestones are repository-wide, so the prefix ties them to
+the project. List the project's milestones:
 
 ```bash
-gh api repos/{owner}/{repo}/issues/<pitch>/sub_issues --jq '.[] | select(.labels[].name == "maestro:spec") | .number'
+gh api repos/{owner}/{repo}/milestones --paginate -X GET -f state=all \
+  --jq '.[] | select(.title | startswith("<project-slug>/")) | .title'
 ```
 
-The count decides two things:
+Ask with `AskUserQuestion` which one this spec belongs to. Offer each milestone, **none**, and
+a new one. Create a new one only after the user names it:
 
-- **No spec yet.** This spec covers every scope of the pitch. It needs no `**Scopes**` field,
-  and it stays flat in the namespace.
-- **One or more specs already.** This spec **must** carry a `**Scopes**` field that names the
-  scopes it covers, and its tasks **must** be grouped under the scope each one serves.
-  `/maestro:maestro sync` reads that field and that grouping, and it reports an error and
-  writes nothing when either is absent. It never guesses, because a wrong attribution is a
-  wrong number that nobody can see is wrong.
+```bash
+gh api repos/{owner}/{repo}/milestones -f title="<project-slug>/<milestone-name>"
+```
 
-The scopes come from shaping, and the pitch issue names them under `## Scopes`. Use those
-names exactly, because `/maestro:maestro sync` matches them as written. If the list is empty,
-the pitch has one scope, named for the pitch.
+**A spec belongs to at most one milestone.** A spec that would span two milestones is two
+specs. The milestone field is the only link: sync groups specs by it, and nothing else in the
+body says where a spec belongs.
 
-**The consequence to know: spec granularity sets progress granularity.** One spec covering
-four scopes gives those four scopes the same number on the hill chart. A pitch that wants
-four separate hills writes four specs.
+Count the specs the project already holds. A second spec is the signal for a milestone
+segment in the namespace:
+
+```bash
+gh api repos/{owner}/{repo}/issues/<project>/sub_issues --jq '.[] | select(.labels[].name == "maestro:spec") | .number'
+```
 
 ### 3. Read the research and the memory
 
-1. **The research issues of the pitch.** Read every sub-issue labelled `maestro:research`.
+1. **The research issues of the project.** Read every sub-issue labelled `maestro:research`.
    Their findings and their open questions are what the requirements are derived from. Link
    them in the `**Research**` field.
 2. **Shared project memory.** Scan `<memoryDir>/MEMORY.md` and read every fact whose hook
@@ -123,7 +131,7 @@ system is fine.
 - "Dismissal is scoped to the organization, in `localStorage`."
 - "The feature is behind the `new-onboarding` flag."
 
-**Exact implementation, which does not:** CSS classes, type signatures, prop shapes, file
+**Exact implementation, which does not:** CSS classes, type signatures, prop lists, file
 paths, framework patterns, function names, environment variables, DI tokens, schema field
 names.
 
@@ -165,11 +173,12 @@ them are small.
 ### 6. Write the spec issue
 
 ```bash
-gh issue create --title "Spec: <Scope Title>" --label maestro:spec --parent <pitch> --body-file <path>
+gh issue create --title "Spec: <Title>" --label maestro:spec --parent <project> \
+  --milestone "<project-slug>/<milestone-name>" --body-file <path>
 ```
 
 Write the body with `--body-file`. A here-string loses the line returns. `--parent` attaches
-the issue to the pitch in the same call. The full route, and the fallback for a direct REST
+the issue to the project in the same call. Drop `--milestone` when the user chose none. The full route, and the fallback for a direct REST
 call, are in [../SKILL.md](../SKILL.md).
 
 #### The body
@@ -179,11 +188,9 @@ horizontal rule (`---`) anywhere. The headings do that work.
 
 ```markdown
 **Date**: <YYYY-MM-DD>
-**Cycle**: <Cycle N>
 **Team**: <team>
-**Pitch**: `<pitch-name>` — #<pitch issue number>
+**Project**: `<project-name>` — #<project issue number>
 **Namespace**: <NS>
-**Scopes**: <the scopes this spec covers> <!-- only when the pitch holds more than one spec -->
 **Research**: #<research issue number>
 
 > One line. What a person can do when this is done.
@@ -200,8 +207,8 @@ What the product does after this ships, in the words of the person who uses it. 
 the platform owes, as a numbered list, with each item naming the requirements that deliver
 it.
 
-Close with the appetite: how many pull requests the requirements hold, and how many of them
-are small.
+Close with the size: how many pull requests the requirements hold, and how many of them are
+small.
 
 ### How one <run> works
 
@@ -266,15 +273,11 @@ The task issues, in the order they land, each with what it waits on.
 2. #<task> — <what it delivers>, after #<task>.
 ```
 
-Omit the `**Cycle**` and `**Team**` lines when the context gives neither.
-
-**When the spec covers several scopes, the Tasks section groups the tasks under the scope
-each one serves.** Without that grouping the `**Scopes**` field says which scopes exist but
-not which task belongs to which, and progress stays uncomputable.
+Omit the `**Team**` line when the context does not give it.
 
 #### The collapsed block is the rule, not an option
 
-A person who opens the issue wants the shape of the bet. A person who builds one requirement
+A person who opens the issue wants the outline of the work. A person who builds one requirement
 wants its criteria. The first reader must not pay for the second. So every requirement puts
 its acceptance criteria and its technical notes inside the `<details>` block, and keeps
 outside only the prose a reader needs to understand the requirement. Keep the visible part to
@@ -294,14 +297,14 @@ priority alone.
 
 #### Requirement statuses
 
-| Status        | Meaning                                                                                       |
-| ------------- | --------------------------------------------------------------------------------------------- |
-| `pending`     | Not started. Free to edit, reprioritize or rewrite. It is not written on the line.            |
-| `in_progress` | An agent or a person is building it.                                                          |
-| `done`        | Complete. The criteria are checked, and the notes name the pull request.                      |
-| `cut`         | Removed from scope before the work started. Keep it, with the reason.                         |
-| `obsolete`    | Was `done`, and a later pivot made it irrelevant. Keep it, and say what changed.              |
-| `moved`       | Transferred to another pitch. Keep it, and link the destination pitch and the new identifier. |
+| Status        | Meaning                                                                                   |
+| ------------- | ----------------------------------------------------------------------------------------- |
+| `pending`     | Not started. Free to edit, reprioritize or rewrite. It is not written on the line.        |
+| `in_progress` | An agent or a person is building it.                                                      |
+| `done`        | Complete. The criteria are checked, and the notes name the pull request.                  |
+| `cut`         | Removed before the work started. Keep it, with the reason.                                |
+| `obsolete`    | Was `done`, and a later pivot made it irrelevant. Keep it, and say what changed.          |
+| `moved`       | Transferred to another project. Keep it, and link the destination and the new identifier. |
 
 **Never delete a requirement that has been worked on.** The spec is a historical record. When
 priorities shift, change the status.
@@ -316,8 +319,8 @@ priorities shift, change the status.
   block as context.
 
 **A bug is a requirement too.** There is no `<NS>-BUG-N` space. A defect is a requirement
-whose goal is to make broken behavior work again, and it takes the same shape. Keep it in the
-`<NS>-REQ-N` sequence, so that one list gives one total and one honest percentage.
+whose goal is to make broken behavior work again, and it takes the same form. Keep it in the
+`<NS>-REQ-N` sequence, so that one list gives one honest count.
 
 ### 7. Propose the task issues
 
@@ -325,21 +328,22 @@ A task issue is the unit a pull request closes. Propose the first ones now, and 
 of them before the author approves.
 
 Show the user the proposed list: a title, the requirements each task carries, what it waits
-on, and one line on what it delivers. Use `AskUserQuestion` for the approval. **This moment
-is the spec review huddle.**
+on, and one line on what it delivers. Use `AskUserQuestion` for the approval.
 
-For each approved task, create the issue and attach it to the **spec** issue:
+For each approved task, create the issue and attach it to the **spec** issue. **A task takes
+its spec's milestone**, so a milestone view in GitHub shows the whole stage:
 
 ```bash
-gh issue create --title "Task: <what it delivers>" --label maestro:task --parent <spec> --body-file <path>
+gh issue create --title "Task: <what it delivers>" --label maestro:task --parent <spec> \
+  --milestone "<the spec's milestone>" --body-file <path>
 ```
 
 The task body:
 
 ```markdown
-**Pitch**: #<pitch> · **Spec**: #<spec> · **Requirements**: <NS>-REQ-1, <NS>-REQ-2
+**Project**: #<project> · **Spec**: #<spec> · **Requirements**: <NS>-REQ-1, <NS>-REQ-2
 
-<What this task delivers, in two to five lines. The constraints that decide its shape, in
+<What this task delivers, in two to five lines. The constraints that decide its form, in
 bold.>
 
 Proof: <how somebody knows it works. Name the command or the run.>
@@ -365,8 +369,10 @@ A spec is a living issue.
 - Add a new requirement at the bottom, with the next `<NS>-REQ-N` number.
 - Reprioritize and rewrite a pending requirement freely.
 - Mark a completed but irrelevant requirement `obsolete`. Never delete it.
-- When the scope itself shifts, rewrite **The problem** or **The solution**. The issue states
-  what the bet is now, and the statuses carry the history.
+- When the goal itself shifts, rewrite **The problem** or **The solution**. The issue states
+  what the work is now, and the statuses carry the history.
+- When the spec moves to another stage, change its milestone and its tasks' milestones with
+  `gh issue edit --milestone`.
 
 After a build lands:
 

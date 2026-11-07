@@ -1,6 +1,6 @@
 ---
 name: research
-description: Explore a topic across five sources in parallel — shared memory, the codebase, prior art, the team's own docs, and the team's chat — then grill the findings and write a research issue under the pitch issue. The output is a GitHub issue, never a file.
+description: Explore a topic across five sources in parallel — shared memory, the codebase, prior art, the team's own docs, and the team's chat — then grill the findings and write a research issue under the project issue. The output is a GitHub issue, never a file.
 argument-hint: "[optional topic, or the number of a research issue to iterate on]"
 ---
 
@@ -8,7 +8,7 @@ argument-hint: "[optional topic, or the number of a research issue to iterate on
 
 Research finds out what is already true before anybody decides what to build. It reads five
 sources at the same time, grills the findings afterwards, and writes one GitHub issue under
-the pitch issue.
+the project issue.
 
 **Two orderings are load-bearing.** The five sources run in parallel, because each one
 answers a different question and none waits on another. The grilling runs last, because a
@@ -18,14 +18,14 @@ Use ultrathink for maximum reasoning depth.
 
 ## Workflow
 
-### 1. Find the pitch issue
+### 1. Find the project issue
 
 ```bash
-gh issue list --label maestro:pitch --state all --search "<pitch name>" --json number,title
+gh issue list --label maestro:project --state all --search "<project name>" --json number,title
 ```
 
-If no pitch issue exists, offer to run `/maestro:maestro init` first. The research issue is a
-sub-issue of the pitch issue, so the pitch issue must exist before this mode writes
+If no project issue exists, offer to run `/maestro:maestro init` first. The research issue is
+a sub-issue of the project issue, so the project issue must exist before this mode writes
 anything.
 
 If the argument is an issue number labelled `maestro:research`, read that issue. This is
@@ -35,13 +35,13 @@ needs.
 ### 2. Get the topic
 
 Read the topic from the argument, or ask the user for it. A topic is one question, such as
-"how does the sync worker retry a failed job". A pitch holds several research issues, one
-per topic.
+"how does the sync worker retry a failed job". A project holds several research issues,
+one per topic.
 
 ### 3. Read the blueprints first
 
 Read the blueprint that the blueprint map (`blueprintMap`) ties to every path the topic
-covers. A blueprint states the shape the code follows, so you then read the code against a
+covers. A blueprint states the pattern the code follows, so you then read the code against a
 known standard instead of one you infer from what you find. Where the code and the blueprint
 disagree, that gap is a finding. With no map, say that no blueprints were found, and go on.
 
@@ -56,7 +56,7 @@ blueprint and the topic in every prompt.
 | **Shared memory**    | What the team already settled, so nothing is re-derived                             | `<memoryDir>/MEMORY.md`, then every fact whose hook looks relevant                                    |
 | **The codebase**     | How it works today, and what must change                                            | Codebase exploration sub-agents, such as `Explore`. Never a manual chain of Grep and Read              |
 | **Prior art**        | What already does the job, inside this repository and outside it, on the web       | Step 5 below                                                                                          |
-| **The team's docs**  | What the team wrote about this before: docs, RFCs, earlier pitch, research, spec and task issues | Any connected doc MCP, the repository's docs, and `gh issue list --state all --label maestro:research` |
+| **The team's docs**  | What the team wrote about this before: docs, RFCs, earlier project, research, spec and task issues | Any connected doc MCP, the repository's docs, and `gh issue list --state all --label maestro:research` |
 | **The team's chat**  | What people said about this, and what they decided in a thread that reached no doc  | The Slack MCP, or another chat MCP. Read any channel you can reach                                    |
 
 **A source with no tool is skipped, and the issue says so.** When no doc MCP or chat MCP is
@@ -104,11 +104,11 @@ open question.
 
 ### 8. Write the research issue
 
-Create the issue and attach it to the pitch in the same call, with `--parent`. The full
+Create the issue and attach it to the project in the same call, with `--parent`. The full
 route, and the fallback for a direct REST call, are in [../SKILL.md](../SKILL.md).
 
 ```bash
-gh issue create --title "Research: <Topic>" --label maestro:research --parent <pitch> --body-file <path>
+gh issue create --title "Research: <Topic>" --label maestro:research --parent <project> --body-file <path>
 ```
 
 Write the body with `--body-file`. A here-string loses the line returns.
@@ -117,8 +117,7 @@ Write the body with `--body-file`. A here-string loses the line returns.
 
 ```markdown
 **Date**: <YYYY-MM-DD>
-**Cycle**: <Cycle N>
-**Pitch**: #<pitch issue number>
+**Project**: #<project issue number>
 
 > One line. The question this research answers.
 
@@ -164,8 +163,6 @@ that says no chat tool was connected.
 
 </details>
 ```
-
-Omit the `**Cycle**` line when the branch gives no cycle and the user names none.
 
 ### 9. Resolve the open questions
 
