@@ -6,7 +6,7 @@ argument-hint: "[project reference or project name]"
 
 # Sync
 
-If `.maestro/config.json` sets `method` to `shape-up`, read `../references/methods/shape-up.md` and apply its section for this mode.
+If the config sets `method` to `shape-up`, read `../references/methods/shape-up.md` and apply its section for this mode.
 
 Run every artifact operation through the store file: `../references/stores/<store>.md`, where
 `<store>` is config `store` (default `github`).
@@ -17,7 +17,7 @@ Read the project tree in the store, and write what it says into one place that p
 the content. The progress section, and the board when there is one, hold the high-level view.
 
 **The default target is a progress section in the project body.** When
-`.maestro/config.json` holds `board.instructions`, sync also pushes the same counts through
+the config holds `board.instructions`, sync also pushes the same counts through
 what those instructions describe: an MCP tool, a `gh project` command, or anything else.
 Without that field, or with an empty one, the project is the only target.
 

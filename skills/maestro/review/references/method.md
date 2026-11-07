@@ -6,8 +6,8 @@ Every pass reads this file.
 ## Authorities
 
 **The team's blueprints are the authorities.** The blueprint map ties paths to blueprints.
-`.maestro/config.json` names the map in its `blueprintMap` field, and the default is
-`.maestro/blueprints/map.json`. The review gives each surface that the diff touches its own
+The config names the map in its `blueprintMap` field, and the review receives it as an
+absolute path. The paths inside the map are relative to the map's own folder. The review gives each surface that the diff touches its own
 pass, and that pass reads the surface's blueprint. A rule about one surface lives in that
 surface's blueprint, and this file does not restate it. Cite the blueprint rule in the
 finding.
@@ -25,8 +25,7 @@ belongs to that blueprint's owner.
 code. The report says that no blueprint was found, so nobody reads a generic review as a
 review against the team's standard.
 
-The team's shared memory (the `memoryDir` of `.maestro/config.json`, `.maestro/memory` by
-default) is **not** an authority. Its facts help a pass remember traps the team hit, but
+The team's shared memory (the `memoryDir` of the config) is **not** an authority. Its facts help a pass remember traps the team hit, but
 a fact can be stale or bound to one context. Treat it only as a **lead to check**: verify
 it against the current code before you raise it, and never cite a memory fact as a rule
 on its own.

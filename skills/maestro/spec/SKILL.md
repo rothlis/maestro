@@ -6,7 +6,7 @@ argument-hint: "[optional spec name, or the reference of a spec to iterate on]"
 
 # Spec
 
-If `.maestro/config.json` sets `method` to `shape-up`, read `../references/methods/shape-up.md` and apply its section for this mode.
+If the config sets `method` to `shape-up`, read `../references/methods/shape-up.md` and apply its section for this mode.
 
 Run every artifact operation through the store file: `../references/stores/<store>.md`, where
 `<store>` is config `store` (default `github`).

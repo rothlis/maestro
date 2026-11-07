@@ -33,7 +33,7 @@ By default these are GitHub issues and milestones. A team that keeps its work in
 
 Progress is shown as counts (tasks closed of total, pull requests in flight, open questions), never as a percentage. The task total grows as the team finds work, so a percentage would go down on good news.
 
-Durable lessons go to shared project memory (`.maestro/memory/` by default). Each session loads the index, so nobody works out the same fact twice.
+Durable lessons go to project memory. With a team setup, it sits in `.maestro/memory/`, and each session loads its index, so nobody works out the same fact twice.
 
 ## The review
 
@@ -49,24 +49,61 @@ Then it fixes the findings, replies to each one and re-checks, until the review 
 
 The review checks your code against blueprints, short markdown files that say what good looks like in one part of your repo. A map ties paths to blueprints and owners. Without blueprints, the review still runs on its general method, and it tells you that it found none.
 
-## Install
+## Getting started
+
+### 1. Install the plugin
+
+Run these two commands in Claude Code:
 
 ```
 /plugin marketplace add rothlis/maestro
 /plugin install maestro@vascohq
 ```
 
-You need `gh` (2.100 or later, for `--parent`), signed in to your repository, and Node 20 or later.
+The plugin installs for your user by default, so it works in every repository on your machine. It writes nothing to a repository until you run setup.
 
-## Set it up in your repository
+You need `gh` 2.100 or later, signed in to your repository, and Node 20 or later.
 
-Run `/maestro:maestro setup` once. It asks one question at a time and writes what you choose:
+### 2. Run setup in each repository
 
-- `.maestro/config.json`: the method (`default` or `shape-up`), the store (`github` or `tracker`), the base branch, the branch pattern, the memory directory, the blueprint map, your Slack channel and your board.
-- `.maestro/memory/MEMORY.md`: the empty memory index, and, if you agree, the line in your `CLAUDE.md` that loads it.
-- `.maestro/blueprints/`: example blueprints to start from, if you want them. They are your standards, for the review.
+Open the repository and run `/maestro:maestro setup`. Setup asks one question at a time. The first question is who uses Maestro in this repository:
 
-Run it again to change a setting. Every setting has a default, so Maestro also works with no setup at all. The files it writes come from [`templates/`](templates/).
+| Answer         | The config                              | Memory and blueprints                         | What the repository gets            |
+| -------------- | --------------------------------------- | --------------------------------------------- | ----------------------------------- |
+| The whole team | `.maestro/config.json`                  | `.maestro/memory/` and `.maestro/blueprints/` | These files, for the team to commit |
+| Only me        | `~/.maestro/<owner>/<repo>/config.json` | The same folder in your home                  | Nothing                             |
+
+If the team can commit to the repository, choose **The whole team**. Everybody then shares the memory, and the review uses the same standards for everybody.
+
+If you cannot commit to the repository, or you do not want Maestro to be visible in it, choose **Only me**. Maestro then writes only to your home folder. `<owner>/<repo>` comes from the `origin` remote, so all clones and worktrees of one repository use the same folder. When both configs exist, the team config wins.
+
+Then setup asks for these values:
+
+- the method: `default`, or `shape-up`
+- the store: `github`, or `tracker`
+- the base branch and the branch pattern
+- the memory folder and the blueprint map
+- your Slack channel and your board
+
+Every value has a default, so you can accept each one. To change a value later, run setup again. Setup can also copy example blueprints from [`templates/`](templates/) to start from.
+
+### 3. Share memory without the repository (optional)
+
+With **Only me**, the memory and the blueprints are yours alone. To share them with a team that cannot commit to the code repository, use a separate repository:
+
+1. Create a small repository for the team, for example `acme/maestro-team`.
+2. Clone it on each machine, for example to `~/maestro-team`.
+3. In setup, set the memory folder to `~/maestro-team/memory`.
+4. Set the blueprint map to `~/maestro-team/blueprints/map.json`.
+5. Pull the clone to get new facts. Commit and push each fact that you add.
+
+One shared repository can serve many code repositories.
+
+### What you give up with Only me
+
+- Memory loads only when a Maestro mode runs. A team setup loads it in every session, through a line in `CLAUDE.md`.
+- Without a shared folder, your teammates do not get your memory, and the review uses your copy of the standards.
+- The `github` store still creates labels and issues in the repository, so other people see them. If you cannot create labels, choose the `tracker` store, or ask a maintainer to create them.
 
 With `"method": "shape-up"`, the project is called a pitch, the brief is the shaped pitch, each milestone is a scope, and sync draws one hill per scope.
 

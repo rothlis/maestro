@@ -1,6 +1,6 @@
 # Store: GitHub Issues
 
-Read this file when `store` in `.maestro/config.json` is `github`, or when the field is
+Read this file when `store` in the config is `github`, or when the field is
 missing. Each section below is one store operation, as the exact `gh` commands. The modes name
 the operation in bold, and this file says how to run it. **Every GitHub-issue trap lives here,
 and only here.**

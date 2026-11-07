@@ -35,7 +35,7 @@ search channels, search users, read a thread. They can be deferred, so load them
 call one. If no Slack tool is connected, say so and stop. Offer the final text, so the author
 can paste it.
 
-**The channel is `announce.slackChannel` in `.maestro/config.json`.** If the field is missing,
+**The channel is `announce.slackChannel` in the config.** If the field is missing,
 ask the author for the channel. Then say that `/maestro:maestro setup` saves it in the config,
 so that the question does not come back. Resolve
 the channel name to its id with the channel search tool, once per invocation.
@@ -65,8 +65,8 @@ request or its diff does not say.
 
 #### Touched surfaces
 
-Both formats start from the blueprint map, at `blueprintMap` in the config
-(default `.maestro/blueprints/map.json`). People come from the map, and never from memory.
+Both formats start from the blueprint map, at `blueprintMap` in the config,
+an absolute path. The paths inside it are relative to the map's own folder. People come from the map, and never from memory.
 
 1. Match each changed file against the `paths` of each surface. A file under a surface's
    blueprint folder belongs to that surface too.

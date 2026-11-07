@@ -6,7 +6,7 @@ argument-hint: "[optional project name in kebab-case]"
 
 # Project
 
-If `.maestro/config.json` sets `method` to `shape-up`, read `../references/methods/shape-up.md` and apply its section for this mode.
+If the config sets `method` to `shape-up`, read `../references/methods/shape-up.md` and apply its section for this mode.
 
 Run every artifact operation through the store file: `../references/stores/<store>.md`, where `<store>` is config `store` (default `github`).
 
@@ -22,8 +22,8 @@ and the progress section, and nothing else, so that every project looks the same
 
 ### 1. Read the configuration
 
-Read `.maestro/config.json`. **If it does not exist, say so, and offer to run
-`/maestro:maestro setup` first.** If the user declines, go on with the defaults from the
+Read the config, as [../SKILL.md](../SKILL.md) says. **If its `scope` is `none`, there is no
+config yet: say so, and offer to run `/maestro:maestro setup` first.** If the user declines, go on with the defaults from the
 Configuration table in [../SKILL.md](../SKILL.md).
 
 ### 2. Make sure that the store is ready
@@ -101,7 +101,7 @@ the requirements.
 ## What init does not do
 
 - It writes no file, and no configuration. `/maestro:maestro setup` writes
-  `.maestro/config.json` and creates the labels.
+  the config and creates the labels.
 - It creates no board item. `/maestro:maestro sync` writes to the board.
 - It writes no progress. The progress section starts empty, and sync fills it.
 - It writes no summary of the project into the body. The brief holds the argument.

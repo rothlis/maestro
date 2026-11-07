@@ -13,7 +13,7 @@
  * summary comment as started, so the comment exists before the review and stays at the top
  * of the pull request. It prints `pass`, `head-sha`, `base` (the base branch of the pull
  * request, `origin/<branch>`), `plugin-root`, `out-dir`, `args` (the workflow args, as JSON,
- * with `store` and `tracker.instructions` from `.maestro/config.json`) and, for a re-check, `recheck-prompt` (a file that says how to judge the earlier findings).
+ * with `blueprintMap`, `store` and `tracker.instructions` from the config) and, for a re-check, `recheck-prompt` (a file that says how to judge the earlier findings).
  *
  * `post` posts the pass as the person who runs it, and prints `outcome`, `review-url` and
  * `summary-url`. A pass only comments: GitHub refuses an approval from the author.
@@ -101,6 +101,7 @@ export function workflowArgs({
     effort,
     route: true,
     pluginRoot,
+    blueprintMap: config.blueprintMap,
     store: config.store,
     trackerInstructions: config.tracker?.instructions ?? "",
   }

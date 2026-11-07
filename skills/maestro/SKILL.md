@@ -18,18 +18,39 @@ An agent keeps that tree current, so the person who picks a project up finds its
 requirements and its open tasks in one place, and finds them true.
 
 Durable, cross-cutting knowledge does not live in the tree. It lives in shared project memory,
-which loads into every session on its own. See [memory.md](memory.md).
+which a team setup loads into every session on its own. See [memory.md](memory.md).
 
 ## Configuration
 
-A team can put `.maestro/config.json` at the root of its repository. `/maestro:maestro setup`
-writes it, with every value. The file is optional, and every field has a default.
+The config is one JSON file, in one of two places. `/maestro:maestro setup` asks which, and
+writes it with every value. The file is optional, and every field has a default.
+
+| Scope  | The config                                | Memory and blueprints by default    |
+| ------ | ----------------------------------------- | ----------------------------------- |
+| `team` | `.maestro/config.json` in the repository  | `.maestro/` in the repository, committed |
+| `me`   | `~/.maestro/<owner>/<repo>/config.json`   | the same private folder, never in the repository |
+
+**The team file wins.** A private config is read only when the repository holds no
+`.maestro/config.json`. `<owner>/<repo>` comes from the `origin` remote, so every clone and
+worktree of one repository shares one private folder.
+
+**Read the config at the start of every mode, with one command:**
+
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/scripts/config.mjs
+```
+
+It finds the file, applies the defaults, and prints every field with `scope`. It prints
+`memoryDir` and `blueprintMap` as absolute paths, so use them as they are. Never look for
+`.maestro/config.json` by hand, because a private config is not in the repository. **When
+`scope` is `me`, read `<memoryDir>/MEMORY.md` next**, because no `CLAUDE.md` loads a private
+memory.
 
 | Field                   | Default                              | Used by                                    |
 | ----------------------- | ------------------------------------ | ------------------------------------------ |
 | `baseBranch`            | `main`                               | `build`, `review`, the pull request shape  |
-| `memoryDir`             | `.maestro/memory`                    | every mode that reads or writes memory     |
-| `blueprintMap`          | `.maestro/blueprints/map.json`       | every mode that reads a blueprint          |
+| `memoryDir`             | `.maestro/memory`, or `memory` for `me` | every mode that reads or writes memory     |
+| `blueprintMap`          | `.maestro/blueprints/map.json`, or `blueprints/map.json` for `me` | every mode that reads a blueprint          |
 | `prTemplate`            | `.github/pull_request_template.md`   | `build`                                    |
 | `branchPattern`         | none: plain kebab-case               | `build`, the project name, see Context     |
 | `method`                | `default`                            | `init`, `spec`, `sync`, see Methods        |
@@ -38,8 +59,10 @@ writes it, with every value. The file is optional, and every field has a default
 | `announce.slackChannel` | none: `announce` asks for a channel  | `announce`                                 |
 | `board.instructions`    | none: `sync` writes the project only | `sync`                                     |
 
-Read the file once at the start of a mode. A missing file or a missing field takes the
-default.
+A relative `memoryDir` or `blueprintMap` is relative to the repository for `team`, and to the
+private folder for `me`. `~` is the home folder, so a private config can point at a folder
+the team shares, such as a clone of a separate repository. The paths inside a blueprint map
+are relative to the map's own folder.
 
 `branchPattern` is the branch name of a task, such as `"<type>/<slug>"`. `<type>` is the kind
 of change (feat, fix). `<n>` is optional (e.g. `sprint-<n>/<slug>`), taken from the user or the
@@ -86,7 +109,7 @@ pull request.
 
 ### Stores
 
-**Where the artifacts live is a store.** `store` in `.maestro/config.json` picks it, and the
+**Where the artifacts live is a store.** `store` in the config picks it, and the
 default is `github`. Pull requests and the review stay on GitHub with every store.
 
 | Store     | File                                                         | The artifacts are                                         |
@@ -113,13 +136,13 @@ reads `references/stores/<store>.md`, and uses these operations, in bold, and no
 store that does a new job adds it to its file, and the modes do not change.
 
 When `store` is `tracker` and `tracker.instructions` is empty, the mode asks the user for the
-mapping once, then offers to save it to `.maestro/config.json`.
+mapping once, then offers to save it to the config.
 
 ### Methods
 
 **The core is method-neutral.** The tree, the stores and the modes are the same for Scrum,
-Kanban, RFCs or no method at all, and a team picks its method with `method` in
-`.maestro/config.json`. The default needs nothing more.
+Kanban, RFCs or no method at all, and a team picks its method with `method` in the
+config. The default needs nothing more.
 
 When `method` is `shape-up`, `init`, `spec` and `sync` read [references/methods/shape-up.md](references/methods/shape-up.md) and apply its section for their mode: the Shape Up preset changes words, never the kinds, and reads a milestone as a scope.
 
@@ -127,7 +150,7 @@ When `method` is `shape-up`, `init`, `spec` and `sync` read [references/methods/
 
 | Mode         | Command                     | What it does                                                         | Output                          |
 | ------------ | --------------------------- | -------------------------------------------------------------------- | ------------------------------- |
-| **setup**    | `/maestro:maestro setup`    | Once per repository: asks for each value, writes the configuration, the memory index and the labels | `.maestro/config.json`, a ready store |
+| **setup**    | `/maestro:maestro setup`    | Once per repository: asks whether the team or only you use it, then each value, and writes the config, the memory index and the labels | The config, a ready store |
 | **init**     | `/maestro:maestro init`     | Once per project: opens the project with a fixed body, and its milestones | Project                    |
 | **research** | `/maestro:maestro research` | Reads five sources in parallel, grills last                          | Research                        |
 | **spec**     | `/maestro:maestro spec`     | Writes the requirements, then proposes the tasks                     | Spec, tasks                     |
@@ -192,9 +215,9 @@ in the same way. An optional second argument can follow the mode, such as a refe
 
 ### Shared project memory
 
-Durable, cross-cutting knowledge lives in the memory directory (`memoryDir`, default
-`.maestro/memory/`), indexed by its `MEMORY.md`, which loads into every session through a pointer
-in the repository's `CLAUDE.md`. The format and the rules are in **[memory.md](memory.md)**.
+Durable, cross-cutting knowledge lives in the memory directory (`memoryDir`), indexed by its
+`MEMORY.md`. For a team, the index loads into every session through a pointer in the
+repository's `CLAUDE.md`. For `me`, every mode reads it after the config. The format and the rules are in **[memory.md](memory.md)**.
 
 - **Read it** in `research` and `spec`: scan the index before exploring, so that nothing
   already settled is derived again.

@@ -1,6 +1,6 @@
 # Store: a tracker, through its MCP
 
-Read this file when `store` in `.maestro/config.json` is `tracker`. The artifacts then live in
+Read this file when `store` in the config is `tracker`. The artifacts then live in
 the team's tracker, such as Linear or Jira, and a mode reaches them through the tracker's MCP
 tools. Pull requests and the review stay on GitHub.
 
@@ -9,7 +9,7 @@ file says how to run it through the tracker.
 
 ## The mapping
 
-`tracker.instructions` in `.maestro/config.json` is free text. It names the MCP, and it says
+`tracker.instructions` in the config is free text. It names the MCP, and it says
 how each artifact maps onto the tracker. For example:
 
 > Linear MCP. project = Linear project. spec = issue labelled spec in that project. task =

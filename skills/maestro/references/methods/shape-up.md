@@ -1,6 +1,6 @@
 # Shape Up preset
 
-Read this file only when `.maestro/config.json` sets `method` to `shape-up`. Each section
+Read this file only when the config sets `method` to `shape-up`. Each section
 changes one mode, and a mode reads only its own section. The kinds, the tree, the store and
 the body write rules do not change. **The preset changes words, never the kinds.**
 

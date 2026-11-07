@@ -50,6 +50,7 @@ test("the workflow args carry the absolute install path of the plugin", () => {
     effort: "medium",
     route: true,
     pluginRoot: PLUGIN_ROOT,
+    blueprintMap: ".maestro/blueprints/map.json",
     store: "github",
     trackerInstructions: "",
   })

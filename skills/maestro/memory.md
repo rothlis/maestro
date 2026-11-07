@@ -1,8 +1,9 @@
 # Shared Project Memory
 
-Maestro's durable knowledge lives in a **git-committed, team-shared memory store**. Its
-directory is `memoryDir` in `.maestro/config.json`, and the default is `.maestro/memory/`. This
-file uses the default path.
+Maestro's durable knowledge lives in a memory store. Its directory is `memoryDir` in the
+config. For a team setup, the default is `.maestro/memory/`, committed and shared. For a
+private setup, it is `~/.maestro/<owner>/<repo>/memory/`, or a folder the user shares with
+the team. This file uses the team path.
 
 ## Why this exists
 
@@ -25,7 +26,11 @@ future work.
 
 ## The pointer in `CLAUDE.md`
 
-Add these lines to the repository's root `CLAUDE.md`. The `@` import loads the index into
+**A private memory has no pointer**, because the repository's `CLAUDE.md` is part of the
+repository. Every mode reads its index after it reads the config. A session that runs no
+Maestro mode does not load it.
+
+For a team setup, add these lines to the repository's root `CLAUDE.md`. The `@` import loads the index into
 every session. Use the real path when `memoryDir` is not the default.
 
 ```markdown
@@ -77,7 +82,7 @@ Link related facts with [[their-slug]].
 
 ## Read rules (research, spec)
 
-Before exploring the codebase, **scan `.maestro/memory/MEMORY.md`** and read any fact whose
+Before exploring the codebase, **scan `<memoryDir>/MEMORY.md`** and read any fact whose
 description looks relevant to the work. This is the first place to look for prior decisions
 and solved problems. It prevents re-deriving things the team already settled. It is in
 addition to the project's own research artifacts, not a replacement.
@@ -120,3 +125,6 @@ memory-consolidation skill against the memory directory if one is installed, or 
   tail, and `CLAUDE.md` holds the rules.
 - **Personal memory** (`~/.claude/.../memory/`): per developer, not committed. Shared project
   memory is the team-visible counterpart. Prefer it for anything a teammate would want.
+- **A shared folder.** A user who cannot commit to the repository can still share memory: the
+  team keeps it in a separate repository, each person clones it, and each private config points
+  `memoryDir` at the clone. Pull it before a mode reads it, and commit a new fact to it.

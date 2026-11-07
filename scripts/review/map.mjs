@@ -1,6 +1,6 @@
 /**
  * Resolves each routed file to the GitHub team that owns it, from the blueprint map that
- * `blueprintMap` in `.maestro/config.json` names: a team that must review the change, or a
+ * `blueprintMap` in the config names: a team that must review the change, or a
  * team that must only know about it. The review names files and rules, and this file names
  * the team, so a model never picks a team.
  *
@@ -9,7 +9,6 @@
  */
 
 import { existsSync, readFileSync } from "node:fs"
-import { join } from "node:path"
 
 import { gitRoot, readConfig } from "../config.mjs"
 import { warn } from "./github.mjs"
@@ -19,7 +18,7 @@ export const EMPTY_MAP = { surfaces: [], uncovered: [], uncoveredReviewTeams: {}
 /** A missing map is no error. A malformed one is a warning, because the pass is already posted. */
 export function readMap(root = gitRoot()) {
   try {
-    const path = join(root, readConfig(root).blueprintMap)
+    const path = readConfig(root).blueprintMap
     if (!existsSync(path)) return EMPTY_MAP
     const map = JSON.parse(readFileSync(path, "utf8"))
     return { ...EMPTY_MAP, ...map, surfaces: map.surfaces ?? [] }

@@ -27,8 +27,8 @@ author's call.
 
 ## Configuration
 
-Read `.maestro/config.json` once, at the start. Every field has a default, and a missing file
-means every default.
+Read the config once, at the start, as [../SKILL.md](../SKILL.md) says. Every field has a
+default, and a missing file means every default. The defaults below are the team ones.
 
 | Field                 | Default                             | Used in   |
 | --------------------- | ----------------------------------- | --------- |

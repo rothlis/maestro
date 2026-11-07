@@ -3,7 +3,7 @@ export const meta = {
   description:
     "Review a pull request against the team's own blueprints — the single source of the review's passes, engines and criteria injection",
   whenToUse:
-    "Every maestro review runs through this script; the /maestro:maestro review skill is a front door onto it. Pass args.pluginRoot, the absolute path of the plugin, and args.store with args.trackerInstructions from .maestro/config.json when the artifacts live in a tracker. Call it as a phase of larger work with workflow('maestro:maestro-review', { pluginRoot, scope, base, effort }), or launch it directly. Subagents cannot nest, so an agent that has neither the Workflow tool nor the Agent tool must hand the review back to its caller instead of reviewing in one context. Never resume a run: a failed pass has no cached result, so a resume re-runs it and every agent after it.",
+    "Every maestro review runs through this script; the /maestro:maestro review skill is a front door onto it. Pass args.pluginRoot, the absolute path of the plugin, args.blueprintMap, the absolute path of the map, and args.store with args.trackerInstructions when the artifacts live in a tracker. `node <pluginRoot>/scripts/config.mjs` prints all of them. Call it as a phase of larger work with workflow('maestro:maestro-review', { pluginRoot, scope, base, effort }), or launch it directly. Subagents cannot nest, so an agent that has neither the Workflow tool nor the Agent tool must hand the review back to its caller instead of reviewing in one context. Never resume a run: a failed pass has no cached result, so a resume re-runs it and every agent after it.",
   phases: [
     {
       title: "Route",
@@ -51,22 +51,26 @@ const PR_SHAPE = `${PLUGIN_ROOT}/skills/maestro/references/pr-shape.md`;
 const PR_SHAPE_SCRIPT = `${PLUGIN_ROOT}/scripts/pr-shape/report.mjs`;
 const RATIO_SCRIPT = `${PLUGIN_ROOT}/scripts/comment-sweep/ratio.mjs`;
 
-const MAP_LOOKUP = `The blueprint map ties paths to the team's blueprints. Find it this way: read \`.maestro/config.json\` at the repository root if it exists, and take its \`blueprintMap\` field. When the file or the field is missing, the map is \`.maestro/blueprints/map.json\`. When the map does not exist, the repository has no blueprints, which is a normal outcome and not a failure.`;
+// The config can live outside the repository, so the caller resolves the map's path.
+const MAP_PLACE = scopeArg.blueprintMap
+  ? `It is at \`${scopeArg.blueprintMap}\`.`
+  : `Run \`node ${PLUGIN_ROOT}/scripts/config.mjs\` and take its \`blueprintMap\` field, an absolute path.`;
+const MAP_LOOKUP = `The blueprint map ties paths to the team's blueprints. ${MAP_PLACE} Every \`blueprint\`, \`reviewRisk\` and \`designReview\` path in it is relative to the map's own folder, so resolve each one against that folder before you read it. When the map does not exist, the repository has no blueprints, which is a normal outcome and not a failure.`;
 
 const MAX_VERIFICATIONS = 20;
 
 const CHEAP_MODEL = "sonnet";
 const STRONG_MODEL = "opus";
 
-// The caller reads `baseBranch` from `.maestro/config.json`, because a script cannot read files.
+// The caller reads `baseBranch` from the config, because a script cannot read files.
 const base = scopeArg.base || `origin/${scopeArg.baseBranch || "main"}`;
 const prBase = scopeArg.prBase || base;
 // The store holds the task and spec artifacts; pull requests stay on GitHub either way. The caller
-// reads `store` and `tracker.instructions` from `.maestro/config.json`.
+// reads `store` and `tracker.instructions` from the config.
 const STORE = scopeArg.store || "github";
 if (!["github", "tracker"].includes(STORE)) {
   throw new Error(
-    `maestro-review: args.store is "${STORE}", and it must be "github" or "tracker". Fix \`store\` in .maestro/config.json. No review ran.`,
+    `maestro-review: args.store is "${STORE}", and it must be "github" or "tracker". Fix \`store\` in the Maestro config. No review ran.`,
   );
 }
 const TRACKER_INSTRUCTIONS = (scopeArg.trackerInstructions || "").trim();
@@ -133,7 +137,7 @@ const SCOPE_SCHEMA = {
     blueprintMap: {
       type: "string",
       description:
-        "the path of the blueprint map you read, or an empty string when none exists",
+        "the absolute path of the blueprint map you read, or an empty string when none exists",
     },
     surfaces: {
       type: "array",
@@ -145,12 +149,12 @@ const SCOPE_SCHEMA = {
           id: { type: "string", description: "the surface id, as in the map" },
           blueprint: {
             type: "string",
-            description: "the surface's blueprint path, as in the map",
+            description: "the surface's blueprint path, resolved against the map's folder",
           },
           designReview: {
             type: "string",
             description:
-              "the surface's designReview path, as in the map, or an empty string when the map sets none",
+              "the surface's designReview path, resolved against the map's folder, or an empty string when the map sets none",
           },
           files: { type: "array", items: { type: "string" } },
         },
@@ -416,7 +420,7 @@ const routed = await withOneRetry("route:human-review", () =>
 ${prFetch}git diff ${prBase}...HEAD; git diff HEAD; echo '=== NEW FILES — no diff shows these, read each in full ==='; git ls-files --others --exclude-standard
 \`\`\`
 
-Report every path repo-relative, never absolute. **If a file this prompt tells you to read does not exist, put its path in \`unreadFiles\`.** A blueprint map that does not exist is not an unread file.
+Report every path repo-relative, never absolute, except a blueprint file that sits outside the repository. **If a file this prompt tells you to read does not exist, put its path in \`unreadFiles\`.** A blueprint map that does not exist is not an unread file.
 
 Your pass is **the routing decision**. You answer two questions: **must a person read this change before it merges, and must a team know about it?** You do not review the code. You do not pick a team: the step that posts the review picks it from the map, from the files you name.
 
@@ -604,7 +608,7 @@ What the whole diff does: ${scope.diffSummary}
 
 **Read \`${METHOD}\` before you review.** It holds the review's own method: how to cite an authority, the comment measurement, the security leads, and what not to flag. ${authorities} Read the "What NOT to flag" section and obey it — do not raise anything a linter, typechecker, formatter or CI would catch, and do not raise pre-existing issues on unmodified lines.
 
-Cite the authority for every finding (a blueprint rule, an instructions-file rule, or the code itself). A finding with no authority and no concrete evidence is not a finding. Report every path repo-relative, never absolute.
+Cite the authority for every finding (a blueprint rule, an instructions-file rule, or the code itself). A finding with no authority and no concrete evidence is not a finding. Report every path repo-relative, never absolute, except a blueprint you cite that sits outside the repository.
 
 **If a file this prompt tells you to read does not exist, put its path in \`unreadFiles\`.** Do not review from memory in its place. The script then reports your pass as one that did not run, which is true: a pass without its method file is not the review it claims to be.`;
 };
@@ -761,7 +765,7 @@ const specSkip =
     : STORE === "tracker" && !TRACKER_INSTRUCTIONS
       ? {
           short: "the store is tracker, and no tracker instructions were given",
-          note: `The store is tracker, and no tracker instructions were given, so the spec pass cannot tell which MCP holds ${scope.taskRefs.join(", ")} and its spec. Set \`tracker.instructions\` in .maestro/config.json. The spec pass did not start.`,
+          note: `The store is tracker, and no tracker instructions were given, so the spec pass cannot tell which MCP holds ${scope.taskRefs.join(", ")} and its spec. Set \`tracker.instructions\` in the Maestro config. The spec pass did not start.`,
         }
       : null;
 

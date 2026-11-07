@@ -19,7 +19,7 @@ Why a workflow and not this skill's own dispatches: the passes must run in paral
 
 The review reads the team's files from the consumer repository, never from this plugin:
 
-- **`.maestro/config.json`**, optional. `baseBranch` (default `main`) gives the base, `origin/<baseBranch>`. `blueprintMap` (default `.maestro/blueprints/map.json`) names the map.
+- **The config**, optional, in the repository or in the user's private folder. `node ${CLAUDE_PLUGIN_ROOT}/scripts/config.mjs` finds it. `baseBranch` (default `main`) gives the base, `origin/<baseBranch>`. `blueprintMap` names the map, as an absolute path.
 - **The blueprint map.** Each surface in it has an `id`, a `blueprint`, `paths`, and optionally `reviewRisk`, `reviewTeam` and `designReview`. The review buckets the changed files by surface and runs one checklist pass per touched surface, against that surface's blueprint. A surface that sets `designReview` also gets a design pass, which reads that file as its design guide. A file that no surface matches goes to a conventions pass on the generic method.
 - **No map** → the review still runs, on the generic method, the repository's instructions files and the code. The report says that no blueprint was found.
 - **The store.** The config field `store` (default `github`) says where the tasks and the specs live. The spec check works on either store:
@@ -107,8 +107,9 @@ Outside this route, such as from another workflow, pass the args yourself. `plug
 ```js
 const review = await workflow("maestro:maestro-review", {
   pluginRoot: "${CLAUDE_PLUGIN_ROOT}",
-  baseBranch: "main", // from .maestro/config.json
-  store: "github", // from .maestro/config.json
+  baseBranch: "main", // from scripts/config.mjs
+  blueprintMap: "/abs/path/to/map.json", // from scripts/config.mjs
+  store: "github", // from scripts/config.mjs
   trackerInstructions: "", // tracker.instructions, when store is "tracker"
   effort: "medium",
 });

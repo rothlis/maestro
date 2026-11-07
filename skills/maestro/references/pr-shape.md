@@ -20,7 +20,7 @@ A PR that is too large is expensive to correct after it is open. The author must
 node ${CLAUDE_PLUGIN_ROOT}/scripts/pr-shape/report.mjs <base> --json
 ```
 
-`<base>` is `origin/<baseBranch>` from `.maestro/config.json`, by default `origin/main`. Without `--json`, the script prints the same report as text. The JSON report carries these fields:
+`<base>` is `origin/<baseBranch>` from the config, by default `origin/main`. Without `--json`, the script prints the same report as text. The JSON report carries these fields:
 
 | Field               | What it holds                                                                   |
 | ------------------- | ------------------------------------------------------------------------------- |
