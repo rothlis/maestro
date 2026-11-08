@@ -1,6 +1,6 @@
 ---
 name: review
-description: Review a pull request against the team's own standards — the blueprints that the blueprint map ties to each path, the review's generic method (comment hygiene, guards, security leads), and the spec the branch implements. It reviews the pushed head on the user's own Claude session and `gh` token, posts the review on GitHub, then fixes the findings until the review approves. Use on an open pull request, or whenever asked to "review my changes against our blueprints". A front door onto the `maestro-review` workflow, which holds the passes and fans them out to the review engines. In a session or an agent that cannot run it, this skill says so rather than degrading to a single-context review.
+description: Review a pull request against the team's own standards — the blueprints that the blueprint map ties to each path, the review's generic method (comment hygiene, guards, security leads), and the spec the branch implements. It reviews the pushed head on the user's own Claude session and `gh` token, posts the review on GitHub, then fixes the findings until the review approves, and reflects: it records in memory what the review taught, and proposes a blueprint rule for a lesson that keeps coming back. Use on an open pull request, or whenever asked to "review my changes against our blueprints". A front door onto the `maestro-review` workflow, which holds the passes and fans them out to the review engines. In a session or an agent that cannot run it, this skill says so rather than degrading to a single-context review.
 argument-hint: "[pull request number] [effort]"
 metadata:
   tags: review,conventions,blueprints,quality
@@ -138,7 +138,7 @@ If `findings` is empty and `failedPasses` is empty, confirm the diff is clean an
 ## Fix the findings
 
 1. Read the summary. The number after `issuecomment-` in `summary-url` is its id: `gh pr view <n> --json comments --jq '.comments[] | select(.url | endswith("issuecomment-<id>")) | .body'`. Its first section is the current pass, and it links each open line or file comment.
-2. Report the verdict, the teams that the human review names, the findings that are still open, and the link to the summary. Do not copy the whole summary into the conversation. If the verdict is `approve` and no finding is open, stop here.
+2. Report the verdict, the teams that the human review names, the findings that are still open, and the link to the summary. Do not copy the whole summary into the conversation. If the verdict is `approve` and no finding is open, go to [Reflect](#reflect).
 3. Sort the open findings by the severity label of each comment. A `Blocking` or a `Should fix` finding is required, because it holds the verdict back. A `Suggestion` is optional. The summary gives the label of each open finding, from this pass and from earlier passes. If a label is missing, read the severity of a line or file comment from the `<!-- maestro-finding severity=… -->` marker in the first comment of its thread. For a finding in a file outside the diff, read it from the body-findings marker of the newest verdict review. A finding is already declined when a person replied to it to decline it or to justify it. The `Not fixed` reply of step 8 is one example, and a reply in the words of the user is another. For a line or file comment, read the replies in its thread. For a finding in a file outside the diff, read the pull request comments that name its id. Steps 4 to 6 skip a declined finding, so the loop never overrides a decision of the user. If you cannot tell whether a reply declines the finding, do not fix it in step 4 or step 5. Put it in the question of step 6.
 4. Fix each required finding now, without a question. Read the code at the cited line before you fix it. If you think that a required finding is wrong, do not fix it. Put it in the question of step 6, with your reason.
 5. Weigh each suggestion before you ask about it. Read the code at the cited line, then decide two things:
@@ -178,14 +178,47 @@ If `findings` is empty and `failedPasses` is empty, confirm the diff is clean an
 
    **Start no re-check either when the verdict of this pass is `approve` and step 7 pushed only quick fixes of suggestions**, as step 5 defines a quick fix. A re-check of a minor fix costs a full review run. The commit then has no independent review of its own, so tell the user that the push was not reviewed, and that they can run `/maestro:maestro review` again to review it. The verdict marker still names the older head, which is how a reader can tell. A large fix of a suggestion still starts the re-check, because it can introduce a defect.
 
-10. Stop the loop when the verdict is `approve` and step 9 starts no re-check. Also stop it when the user declined every open finding. A re-check must first judge the reply of step 8 to each one. After the third re-check, ask the user before you start another one, because each run costs a full review.
+10. Stop the loop when the verdict is `approve` and step 9 starts no re-check. Also stop it when the user declined every open finding. A re-check must first judge the reply of step 8 to each one. After the third re-check, ask the user before you start another one, because each run costs a full review. When the loop stops, [reflect](#reflect).
 
 A required finding that the user declines stays open until a re-check judges its reply. The re-check closes a finding only when the code fixed it, or when a reply from a person justifies it. If the re-check keeps the finding open, tell the user that the review does not approve the pull request while that finding is open. They can reply in the thread of the finding with a stronger reason. For a finding in a file outside the diff, they reply in a comment on the pull request that names its id. Then they run `/maestro:maestro review` again, and the re-check judges the reply.
+
+## Reflect
+
+**A review that ends teaches the repository something, or it says that it taught nothing.**
+Reflect once, when the loop stops, and not after each pass. The memory format, `seen` and the
+promotion rules are in [../memory.md](../memory.md).
+
+1. **Gather what the review showed.** Take every finding of every pass of this pull request
+   that was fixed or that stays open. Take every `Not fixed` reply that gives a reason. Take
+   every correction that the user made on a matter of standard in this session. If the review
+   approved with no finding and the user corrected nothing, say "Nothing to reflect on", and
+   stop.
+2. **Read the memory index**, `<memoryDir>/MEMORY.md`, and open each fact that looks related.
+3. **Sort each item into one group:**
+   - **It repeats a fact.** A fact already describes it. Add 1 to that fact's `seen`, one time
+     for this pull request, however many findings repeat it.
+   - **A rule is missing.** It cites no blueprint rule, and the same mistake can happen again
+     in other code on the surface. Propose a new fact with `seen: 1`.
+   - **A rule is wrong.** A finding cited a blueprint rule, and the user declined it with a
+     reason that shows that the rule is wrong or out of date. Propose the correction of that
+     rule, for the surface's owner.
+   - **It teaches nothing.** It is a slip in this code only. Most findings go here. Record
+     nothing.
+4. **Ask once.** Show the proposals in one `AskUserQuestion` with `multiSelect`: each new
+   fact, each rule correction, and each fact that now reaches `seen: 3` with its drafted
+   blueprint rule. A change to `seen` alone needs no question.
+5. **Write what the user selected.** For a team setup, commit the memory changes in their own
+   commit on the pull request's branch, and push it. A commit that changes only memory starts
+   no re-check, because it changes no code. A blueprint change goes on its own branch and
+   pull request, as [../memory.md](../memory.md) says. For a private setup, write the files,
+   and commit nothing.
+6. **Report** each fact you wrote or counted, each promotion and correction you proposed, and
+   where each one went.
 
 ## Notes
 
 - **Never report a reduced pass as a full one.** If any pass was skipped, failed, or was narrowed by the arguments, say which, in the report itself.
 - The blueprints are the one place the team's rules live; `references/method.md` holds the review's own method; `workflows/maestro-review.js` is the one place the passes live. If a rule changes, edit the blueprint that owns it. If a pass changes, edit the script. Never restate either here.
-- **A finding says two things.** The code is wrong, and nothing in the blueprints stopped it. A finding that cites no rule names a blank space on the map. When one keeps coming back, offer the user to add the rule to the blueprint of its surface.
+- **A finding says two things.** The code is wrong, and nothing in the blueprints stopped it. A finding that cites no rule names a blank space on the map. [Reflect](#reflect) is where that blank space gets counted, and filled when it keeps coming back.
 - The correctness and error-handling passes use the `pr-review-toolkit` agents when that plugin is installed. Without it, the script runs the same prompt on the default agent, so the pass still runs with less depth.
 - `code-simplifier` is deliberately absent from the passes: its baked-in rules (function-over-arrow, avoid-try-catch) contradict many codebases. If a `/simplify` skill is installed, use it when a simplification pass is wanted.

@@ -214,8 +214,9 @@ lands".** Restate none of them here.
 
 **Most builds produce none.** Write a fact in `<memoryDir>/` only when it is durable and
 cross-cutting, and not already carried by the code, the git history, the spec or the
-repository's `CLAUDE.md`. Check for an existing fact to update first. The format is in
-[../memory.md](../memory.md).
+repository's `CLAUDE.md`. Check for an existing fact to update first: when one already says
+it, add 1 to its `seen`, and propose a blueprint rule when it reaches 3. The format and the
+promotion rules are in [../memory.md](../memory.md).
 
 ## What build does not do
 

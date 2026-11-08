@@ -221,8 +221,12 @@ repository's `CLAUDE.md`. For `me`, every mode reads it after the config. The fo
 
 - **Read it** in `research` and `spec`: scan the index before exploring, so that nothing
   already settled is derived again.
-- **Write it** in `build`: record only durable, cross-cutting learnings, and look for an
-  existing fact before you add one.
+- **Write it** in `build`, in the review's reflect step, and when the user corrects you on a
+  standard: record only durable, cross-cutting learnings, and look for an existing fact
+  before you add one.
+- **Promote it.** Each fact counts how many times its lesson came back (`seen`). At 3, Maestro
+  proposes the lesson as a blueprint rule, so the review enforces it instead of only
+  remembering it. The user, or the surface's owner, decides.
 
 ### Pull request shape
 

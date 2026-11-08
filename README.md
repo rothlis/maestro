@@ -35,6 +35,21 @@ Progress is shown as counts (tasks closed of total, pull requests in flight, ope
 
 Durable lessons go to project memory. With a team setup, it sits in `.maestro/memory/`, and each session loads its index, so nobody works out the same fact twice.
 
+## How it learns
+
+Maestro builds two kinds of knowledge about your repository as it works:
+
+- **Memory** is what the team learned: decisions, solved problems, traps. Each fact is a small file, and Maestro reads the index before it starts work.
+- **Blueprints** are what the team enforces. The review checks code against them.
+
+A lesson moves from the first to the second when it keeps coming back. Each fact counts how many times it came back, in a `seen` field. A fact comes back when you correct Claude on the same thing again, when a review finds the defect the fact describes, or when a build hits the same trap. At 3, Maestro drafts a blueprint rule from the fact and asks you. In a team setup, the change goes to the owner of that part of the repository as a pull request. Once it is accepted, the fact is removed, so each rule lives in one place.
+
+Three moments feed this:
+
+- **During a mode.** When you correct Claude on a standard, it offers to remember it.
+- **After `build`.** It records a lesson when the task produced one.
+- **After `review`.** The review reflects once its loop stops. It sorts what it found into lessons that repeat a fact, rules that are missing, rules that are wrong, and slips that teach nothing. It asks you before it writes anything.
+
 ## The review
 
 `review` runs a [workflow](https://code.claude.com/docs/en/workflows.md) on your own Claude session, in five phases:
@@ -45,7 +60,7 @@ Durable lessons go to project memory. With a team setup, it sits in `.maestro/me
 4. Verify: a separate pass tries to refute the most severe findings, and drops the ones it refutes.
 5. Synthesize: one report, grouped by severity, posted as a pull request review.
 
-Then it fixes the findings, replies to each one and re-checks, until the review approves.
+Then it fixes the findings, replies to each one and re-checks, until the review approves. Last, it reflects on what the review taught, as [How it learns](#how-it-learns) says.
 
 The review checks your code against blueprints, short markdown files that say what good looks like in one part of your repo. A map ties paths to blueprints and owners. Without blueprints, the review still runs on its general method, and it tells you that it found none.
 
