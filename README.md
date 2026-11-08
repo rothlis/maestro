@@ -1,16 +1,10 @@
 # Maestro
 
-Maestro is a Claude Code plugin that runs a project from the decision to build it to the merged code. The brief, wherever you write it, says why. The work lives as a tree of issues, in GitHub or in your tracker, and Maestro reviews each pull request against your team's own standards.
+Maestro is a Claude Code plugin that runs a project from the decision to build it to the merged code. The brief, wherever you write it, says why. The work lives as a tree of issues, in GitHub, in your tracker or in plain files, and Maestro reviews each pull request against your team's own standards.
 
-It works with any method. Teams that use [Shape Up](https://basecamp.com/shapeup) can turn on a preset that adds its words and the hill chart.
+Maestro started inside [Vasco](https://vasco.app). Vasco is the GTM brain for AI agents: the revenue context layer that lets go-to-market agents run in production. Our engineering team builds it with Claude Code, and we built Maestro to run that work. This plugin is the same tool, with the company parts taken out. It carries the habits that held up for us:
 
-## Where Maestro comes from
-
-Maestro started inside [Vasco](https://vasco.app). Vasco is the GTM brain for AI agents: the revenue context layer that lets go-to-market agents run in production. Our engineering team builds it with Claude Code, and we built Maestro to run that work. This plugin is the same tool, with the company parts taken out.
-
-It carries the habits that held up for us:
-
-- **We bet on a problem, then build it in a fixed cycle.** We work in Shape Up: a shaped pitch, a betting table, then a cycle. Maestro starts after the bet. The Shape Up preset is how we run it, and the default method works without it.
+- **We bet on a problem, then build it in a fixed cycle.** We work in [Shape Up](https://basecamp.com/shapeup): a shaped pitch, a betting table, then a cycle. Maestro starts after the bet. It works with any method, and teams that use Shape Up can turn on a preset that adds its words and the hill chart.
 - **Our standards are files.** Each part of our repository has a blueprint with an owner. It holds the rules, the traps, and the command that proves a change. The review reads them on every pull request.
 - **What one session learns, the next one knows.** Decisions and solved problems go to shared memory, one fact per file, and every session loads the index.
 - **A correction becomes a rule.** When a person corrects an agent on a standard, we record it. A lesson that keeps coming back becomes a blueprint rule. The `seen` count and the reflect step come from that loop.
