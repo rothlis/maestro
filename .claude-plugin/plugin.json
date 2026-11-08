@@ -1,7 +1,7 @@
 {
   "name": "maestro",
   "description": "Run a project as a tree of GitHub issues (research, spec, build, sync) with a multi-pass code review against your team's own blueprints. Optional Shape Up preset.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": { "name": "vascohq" },
   "repository": "https://github.com/rothlis/maestro"
 }
