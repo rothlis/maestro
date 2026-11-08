@@ -19,8 +19,9 @@
   "branchPattern": "<type>/<slug>",
   "$branchPattern": "The branch name of a task. <type> is the kind of change, such as feat or fix, and <slug> the kebab-case task. An optional <n>, as in sprint-<n>/<slug>, comes from the user or the newest matching branch, and is never guessed. Remove the field, and build names the branch in plain kebab-case.",
   "announce": {
-    "$comment": "Where announce posts a ready pull request. Remove this block, and announce asks for a channel.",
-    "slackChannel": "#pull-requests"
+    "$comment": "Where announce posts a ready pull request. chat is slack or teams. For Teams, channel is <team> / <channel>, such as Engineering / pull-requests. Remove this block, and announce asks for a channel.",
+    "chat": "slack",
+    "channel": "#pull-requests"
   },
   "board": {
     "$comment": "How sync pushes progress to your board, in free text: an MCP tool name, or a gh project command. Leave instructions empty, or remove this block, and sync writes progress to the project issue only.",

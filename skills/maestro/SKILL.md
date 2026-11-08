@@ -1,6 +1,6 @@
 ---
 name: maestro
-description: Orchestrate the work once a team has decided to build something — set Maestro up in a repository, open the project, research a topic, write the spec and its requirements, build one task, sync progress to the board, review a pull request against the team's blueprints, and announce a pull request in the team's chat. The artifacts are a tree in a store, GitHub Issues by default or the team's tracker through its MCP, and durable learnings go to shared project memory. Use when setting Maestro up in a repository, starting a project, researching, writing requirements, building a task, updating the board, reviewing a pull request ("review my changes"), or announcing a pull request ("post the PR to Slack", "announce this PR", "post the stack").
+description: Orchestrate the work once a team has decided to build something — set Maestro up in a repository, open the project, research a topic, write the spec and its requirements, build one task, sync progress to the board, review a pull request against the team's blueprints, and announce a pull request in the team's chat. The artifacts are a tree in a store, GitHub Issues by default or the team's tracker through its MCP, and durable learnings go to shared project memory. Use when setting Maestro up in a repository, starting a project, researching, writing requirements, building a task, updating the board, reviewing a pull request ("review my changes"), or announcing a pull request ("post the PR to Slack", "post it in Teams", "announce this PR", "post the stack").
 argument-hint: "<setup|init|research|spec|build|sync|review|announce> [optional argument]"
 metadata:
   tags: research,requirements,execution,shared-memory
@@ -56,7 +56,8 @@ memory.
 | `method`                | `default`                            | `init`, `spec`, `sync`, see Methods        |
 | `store`                 | `github`                             | every mode that touches an artifact, see Stores |
 | `tracker.instructions`  | none: the mode asks once             | every mode, when `store` is `tracker`      |
-| `announce.slackChannel` | none: `announce` asks for a channel  | `announce`                                 |
+| `announce.chat`         | `slack`; `teams` for Microsoft Teams | `announce`, see [references/chats/](references/chats/slack.md) |
+| `announce.channel`      | none: `announce` asks for a channel  | `announce`                                 |
 | `board.instructions`    | none: `sync` writes the project only | `sync`                                     |
 
 A relative `memoryDir` or `blueprintMap` is relative to the repository for `team`, and to the
@@ -201,7 +202,7 @@ instructions load when you read its file, so **read the mode file before you run
 every time.
 
 **With an argument** (`/maestro:maestro spec`), read the matching file under Modes below,
-then follow it. A request in words, such as "post the PR to Slack", goes to the matching mode
+then follow it. A request in words, such as "post the PR to Slack" or "post it in Teams", goes to the matching mode
 in the same way. An optional second argument can follow the mode, such as a reference.
 
 **With no argument** (`/maestro:maestro`):

@@ -1,6 +1,6 @@
 ---
 name: setup
-description: Set Maestro up in a repository, once, and again whenever somebody wants to change a value. First asks whether the whole team uses Maestro here (the config goes in the repository's .maestro/) or only the user (it goes in ~/.maestro/<owner>/<repo>/, and nothing is written to the repository). Then asks one question at a time about the method, the store, the memory directory, the base branch, the branch pattern, the blueprint map, the Slack channel and the board, with the current values as the defaults. Then writes the full config, creates the memory directory and its index, offers the CLAUDE.md pointer for a team setup, and makes the store ready. Commits nothing.
+description: Set Maestro up in a repository, once, and again whenever somebody wants to change a value. First asks whether the whole team uses Maestro here (the config goes in the repository's .maestro/) or only the user (it goes in ~/.maestro/<owner>/<repo>/, and nothing is written to the repository). Then asks one question at a time about the method, the store, the memory directory, the base branch, the branch pattern, the blueprint map, the chat channel and the board, with the current values as the defaults. Then writes the full config, creates the memory directory and its index, offers the CLAUDE.md pointer for a team setup, and makes the store ready. Commits nothing.
 argument-hint: ""
 ---
 
@@ -78,8 +78,10 @@ can change the question after it.
    `${CLAUDE_PLUGIN_ROOT}/templates/.maestro/blueprints/` into the map's folder. The paths in
    a map are relative to the map's own folder, so the copies work wherever they land.
    **Never overwrite a file that exists.** Copy only the files that are missing.
-7. **Slack channel for `announce`.** A channel name, or **Skip**. With Skip, `announce` asks
-   for a channel each time.
+7. **Chat for `announce`.** `slack`, `teams` (Microsoft Teams), or **Skip**. With Skip,
+   `announce` asks for the chat and the channel each time. Else ask for the channel: a name
+   such as `#pull-requests` for Slack, or `<team> / <channel>` for Teams. Write both to
+   `announce.chat` and `announce.channel`.
 8. **Board instructions for `sync`.** Free text that says how `sync` reaches the board, or
    **Skip**. With Skip, `sync` writes the progress into the project only.
 

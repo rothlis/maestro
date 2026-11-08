@@ -55,7 +55,7 @@ blueprint and the topic in every prompt.
 | **The codebase**     | How it works today, and what must change                                            | Codebase exploration sub-agents, such as `Explore`. Never a manual chain of Grep and Read              |
 | **Prior art**        | What already does the job, inside this repository and outside it, on the web       | Step 5 below                                                                                          |
 | **The team's docs**  | What the team wrote about this before: docs, RFCs, earlier projects, research, specs and tasks | Any connected doc MCP, the repository's docs, and **find projects**, then the research **children** of each |
-| **The team's chat**  | What people said about this, and what they decided in a thread that reached no doc  | The Slack MCP, or another chat MCP. Read any channel you can reach                                    |
+| **The team's chat**  | What people said about this, and what they decided in a thread that reached no doc  | The Slack or Microsoft Teams MCP, or another chat MCP. Read any channel you can reach                                    |
 
 **A source with no tool is skipped, and the research says so.** When no doc MCP or chat MCP is
 connected, the sub-agent for it does not run, and the **Detail** section names the source

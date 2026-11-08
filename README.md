@@ -20,16 +20,18 @@ A spec can belong to a milestone, which is a stage of the project, such as a pha
 
 By default these are GitHub issues and milestones. A team that keeps its work in Linear, Jira or another tracker sets `"store": "tracker"` and describes in one paragraph how each artifact maps onto it. Maestro then uses that tracker's MCP server. Pull requests and the review stay on GitHub either way.
 
-| Command                     | What it does                                                            |
-| --------------------------- | ----------------------------------------------------------------------- |
-| `/maestro:maestro setup`    | Asks for your settings once per repository and writes them              |
-| `/maestro:maestro init`     | Opens the project issue and any milestones                              |
-| `/maestro:maestro research` | Reads memory, the code, prior art, your docs and chat, then grills you  |
-| `/maestro:maestro spec`     | Writes the requirements, then proposes the task issues                  |
-| `/maestro:maestro build`    | Takes one task, plans, writes the code, opens a draft pull request      |
-| `/maestro:maestro sync`     | Writes progress per spec and per milestone into the project issue       |
-| `/maestro:maestro review`   | Reviews a pull request in several passes and posts the review           |
-| `/maestro:maestro announce` | Posts a pull request to your Slack channel                              |
+| Command                     | What it does                                                              | How it works                                          |
+| --------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `/maestro:maestro setup`    | Asks who uses it here, then your settings, and writes them                | [setup/SKILL.md](skills/maestro/setup/SKILL.md)       |
+| `/maestro:maestro init`     | Opens the project issue and any milestones                                | [init/SKILL.md](skills/maestro/init/SKILL.md)         |
+| `/maestro:maestro research` | Reads memory, the code, prior art, your docs and chat, then grills you    | [research/SKILL.md](skills/maestro/research/SKILL.md) |
+| `/maestro:maestro spec`     | Writes the requirements, then proposes the task issues                    | [spec/SKILL.md](skills/maestro/spec/SKILL.md)         |
+| `/maestro:maestro build`    | Takes one task, plans, writes the code, opens a draft pull request        | [build/SKILL.md](skills/maestro/build/SKILL.md)       |
+| `/maestro:maestro sync`     | Writes progress per spec and per milestone into the project issue         | [sync/SKILL.md](skills/maestro/sync/SKILL.md)         |
+| `/maestro:maestro review`   | Reviews a pull request in several passes, posts the review, then reflects | [review/SKILL.md](skills/maestro/review/SKILL.md)     |
+| `/maestro:maestro announce` | Posts a pull request to your Slack or Microsoft Teams channel             | [announce/SKILL.md](skills/maestro/announce/SKILL.md) |
+
+The entry point is [skills/maestro/SKILL.md](skills/maestro/SKILL.md). It holds the config, the tree, the stores and the methods that every command shares.
 
 Progress is shown as counts (tasks closed of total, pull requests in flight, open questions), never as a percentage. The task total grows as the team finds work, so a percentage would go down on good news.
 
@@ -98,7 +100,7 @@ Then setup asks for these values:
 - the store: `github`, or `tracker`
 - the base branch and the branch pattern
 - the memory folder and the blueprint map
-- your Slack channel and your board
+- your chat (Slack or Microsoft Teams), its channel, and your board
 
 Every value has a default, so you can accept each one. To change a value later, run setup again. Setup can also copy example blueprints from [`templates/`](templates/) to start from.
 

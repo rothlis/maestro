@@ -1,6 +1,6 @@
 ---
 name: announce
-description: Announce one pull request, or a stack of them, in the team's Slack channel, through whatever Slack MCP is connected. For one pull request, writes a headline that says what the PR does, a bold "Why?" line, and one footer line with the reviewers, an FYI that names the teams that must only know (in backticks, no mention), and the verdict of a maestro review at the head commit, and sends no thread reply. The reviewers are the people that the PR requests or that reviewed it, plus the owner from the blueprint map of each touched surface that has none. For a stack, posts a short parent message that links the GitHub stack page and says what the user gets, then a thread reply that says what the stack ships, then one thread reply for each person who has a review, with their question and the points to review. Then asks one set of questions — the people, and whether to mark the PR ready and send — and does nothing before the answer. It does not wait for CI.
+description: Announce one pull request, or a stack of them, in the team's chat channel, Slack or Microsoft Teams, through the chat MCP that is connected. For one pull request, writes a headline that says what the PR does, a bold "Why?" line, and one footer line with the reviewers, an FYI that names the teams that must only know (in backticks, no mention), and the verdict of a maestro review at the head commit, and sends no thread reply. The reviewers are the people that the PR requests or that reviewed it, plus the owner from the blueprint map of each touched surface that has none. For a stack, posts a short parent message that links the GitHub stack page and says what the user gets, then a thread reply that says what the stack ships, then one thread reply for each person who has a review, with their question and the points to review. Then asks one set of questions — the people, and whether to mark the PR ready and send — and does nothing before the answer. It does not wait for CI.
 argument-hint: "[PR number or URL — several for a stack; none for the current branch]"
 ---
 
@@ -28,17 +28,19 @@ Do not poll `gh pr checks`.
 
 ## Workflow
 
-### 1. Find the Slack tools and the channel
+### 1. Find the chat tools and the channel
 
-**Use the Slack MCP that is connected.** Find its tools by what they do: send a message,
-search channels, search users, read a thread. They can be deferred, so load them before you
-call one. If no Slack tool is connected, say so and stop. Offer the final text, so the author
-can paste it.
+**The chat is `announce.chat` in the config: `slack` (the default) or `teams`.** Read the chat
+file, `../references/chats/<chat>.md`. It says how to find the tools, how to resolve the
+channel, how to write a mention, which format the send tool takes, and the limits of that
+chat. Every step below that touches the chat follows it, and this file names no chat.
 
-**The channel is `announce.slackChannel` in the config.** If the field is missing,
-ask the author for the channel. Then say that `/maestro:maestro setup` saves it in the config,
-so that the question does not come back. Resolve
-the channel name to its id with the channel search tool, once per invocation.
+If no tool of that chat is connected, say so and stop. Offer the final text, so the author can
+paste it.
+
+**The channel is `announce.channel` in the config.** If the field is missing, ask the author
+for the channel. Then say that `/maestro:maestro setup` saves it in the config, so that the
+question does not come back. Resolve it as the chat file says, once per invocation.
 
 ### 2. Resolve the pull requests
 
@@ -136,19 +138,17 @@ An interface between modules counts as a risky part only when the pull request a
 
 Write one question for each person who has a review. It asks for the one decision that you need from them. Take it from the pull requests, in your own words, and invent no fact. If you find no question for a person, that person needs no review, and gets no reply. Step 5 shows each question to the author.
 
-#### Slack ids
+#### Mentions
 
-A mention is `<@U…>` with the Slack member id. A plain `@Name` notifies nobody. Resolve each
-GitHub login with the user search tool, by the name or the email that
-`gh api users/<login>` gives. **If the search does not return exactly one person, ask the
-author.** Never guess, because a wrong mention notifies a stranger.
+In the formats below, `<@id>` stands for a mention in the form that the chat file gives. A
+plain `@Name` notifies nobody, in any chat. Resolve each GitHub login as the chat file says.
+**If the search does not return exactly one person, ask the author.** Never guess, because a
+wrong mention notifies a stranger.
 
 ### 4. Write the message
 
-**Write what your Slack tool expects.** Many Slack send tools convert standard Markdown:
-`**bold**`, `[text](url)`. With such a tool, Slack's own `*bold*` or `<url|text>` shows up raw
-in the channel. A message read back from Slack shows mrkdwn, because Slack stores it that way.
-That is not a reason to write mrkdwn.
+**Write what your chat's send tool expects.** The formats below are standard Markdown. The
+chat file says whether to send them as they are, or to convert them first.
 
 #### One pull request
 
@@ -207,7 +207,7 @@ Behind the `<flag>` flag. The details and the reviews are in the thread.
 **One reply for each person who has a question** follows, the person with the most reviews first. The reply opens with the mention, because the parent mentions nobody:
 
 ```
-:eyes: **Review for <@id>: <n> PRs**
+👀 **Review for <@id>: <n> PRs**
 
 > **Question:** <the one decision that you need from them>
 >
@@ -216,7 +216,7 @@ Behind the `<flag>` flag. The details and the reviews are in the thread.
 > **<The point to review>** <the rest of the sentence>. [#<number>](<pr-url>) · [#<number>](<pr-url>)
 ```
 
-- **Formatting decides whether the reply is read.** Slack shows replies sent back to back by one person under one name, so each reply marks its own edges. The `:eyes:` header shows where a reply starts, and the blockquote shows where it ends.
+- **Formatting decides whether the reply is read.** A chat shows replies sent back to back by one person under one name, so each reply marks its own edges. The 👀 header shows where a reply starts, and the blockquote shows where it ends.
 - **Keep an empty `>` line between the question and each point**, so that each one stands alone.
 - **The question comes first**, under the header, because it is the one thing that the person answers.
 - **Each point is one short sentence**, led by the point in bold, about 10 words in all. Write no file name and no inline code: the pull request shows both.
@@ -259,9 +259,8 @@ Ask the whole set again when the author chose "Change it" or "Revise", or typed 
 Mention anything that can start noise in the channel, such as a cost or a low metric, once,
 and offer to move it into the thread.
 
-A preview in a direct message is sent only if the author asks for it. Send it to their own
-Slack id, and write each mention as plain `@Name`, so that nobody gets a notification. Then
-ask again.
+A preview in a direct message is sent only if the author asks for it. Send it as the chat file
+says, so that nobody gets a notification. Then ask again.
 
 ### 6. Do what the author agreed to
 
@@ -269,13 +268,12 @@ In this order:
 
 1. **Mark ready**, if agreed: `gh pr ready <n>` for each draft, bottom of the stack first. If
    one fails, say so and ask before you send a message about a pull request that is not ready.
-2. **Send** the confirmed text, verbatim, to the channel id from step 1.
-3. **Reply in the thread, for a stack only.** Send the context reply first, then one reply for each person. Use the same tool, with the thread set to the
-   timestamp of the parent message. A single pull request gets no thread reply.
+2. **Send** the confirmed text, verbatim, to the channel from step 1.
+3. **Reply in the thread, for a stack only.** Send the context reply first, then one reply for each person, as the chat file says. A single pull request gets no thread reply.
 4. Give back the link of each message you sent.
 
 **Do not request a GitHub reviewer**, on one pull request or on a stack. A person named in the
-message gets the Slack mention only. A second request on top of the ones the repository
+message gets the chat mention only. A second request on top of the ones the repository
 already makes gives the pull request two reviewers for one review.
 
 ## Limits
@@ -283,7 +281,6 @@ already makes gives the pull request two reviewers for one review.
 - **No tool edits or deletes a sent message.** Every revision is a new message, which is why
   the iteration happens in the conversation. If previews were sent to a direct message, tell
   the author to delete the stale ones.
-- Custom emoji exist only in the workspace that added them. The formats above use standard
-  emoji only.
-- A Slack Connect channel can refuse a post from an app. If the send fails for that reason,
-  say so, and offer the text to paste.
+- The formats above use standard emoji only, written as characters.
+- The chat file names the limits of its chat, such as a channel that refuses a post from an
+  app.
