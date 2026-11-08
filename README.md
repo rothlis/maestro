@@ -129,3 +129,7 @@ With `"method": "shape-up"`, the project is called a pitch, the brief is the sha
 ## Not included
 
 Maestro runs on your own Claude session and your own `gh` login. It ships no GitHub App and no CI job.
+
+## License
+
+[MIT](LICENSE)
