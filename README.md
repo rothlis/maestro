@@ -4,6 +4,17 @@ Maestro is a Claude Code plugin that runs a project from the decision to build i
 
 It works with any method. Teams that use [Shape Up](https://basecamp.com/shapeup) can turn on a preset that adds its words and the hill chart.
 
+## Where Maestro comes from
+
+Maestro started inside [Vasco](https://vasco.app). Vasco is the GTM brain for AI agents: the revenue context layer that lets go-to-market agents run in production. Our engineering team builds it with Claude Code, and we built Maestro to run that work. This plugin is the same tool, with the company parts taken out.
+
+It carries the habits that held up for us:
+
+- **We bet on a problem, then build it in a fixed cycle.** We work in Shape Up: a shaped pitch, a betting table, then a cycle. Maestro starts after the bet. The Shape Up preset is how we run it, and the default method works without it.
+- **Our standards are files.** Each part of our repository has a blueprint with an owner. It holds the rules, the traps, and the command that proves a change. The review reads them on every pull request.
+- **What one session learns, the next one knows.** Decisions and solved problems go to shared memory, one fact per file, and every session loads the index.
+- **A correction becomes a rule.** When a person corrects an agent on a standard, we record it. A lesson that keeps coming back becomes a blueprint rule. The `seen` count and the reflect step come from that loop.
+
 ## What it does
 
 A project becomes a tree, by default of labelled GitHub issues:
@@ -129,17 +140,6 @@ With `"method": "shape-up"`, the project is called a pitch, the brief is the sha
 ## Not included
 
 Maestro runs on your own Claude session and your own `gh` login. It ships no GitHub App and no CI job.
-
-## Where Maestro comes from
-
-Maestro started inside [Vasco](https://vasco.app). Vasco is the GTM brain for AI agents: the revenue context layer that lets go-to-market agents run in production. Our engineering team builds it with Claude Code, and we built Maestro to run that work. This plugin is the same tool, with the company parts taken out.
-
-It carries the habits that held up for us:
-
-- **We bet on a problem, then build it in a fixed cycle.** We work in Shape Up: a shaped pitch, a betting table, then a cycle. Maestro starts after the bet. The Shape Up preset is how we run it, and the default method works without it.
-- **Our standards are files.** Each part of our repository has a blueprint with an owner. It holds the rules, the traps, and the command that proves a change. The review reads them on every pull request.
-- **What one session learns, the next one knows.** Decisions and solved problems go to shared memory, one fact per file, and every session loads the index.
-- **A correction becomes a rule.** When a person corrects an agent on a standard, we record it. A lesson that keeps coming back becomes a blueprint rule. The `seen` count and the reflect step come from that loop.
 
 ## License
 
