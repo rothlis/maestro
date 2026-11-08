@@ -18,7 +18,7 @@ Project issue        maestro:project    links to the brief, and a progress secti
 
 A spec can belong to a milestone, which is a stage of the project, such as a phase or a release, and its tasks carry the spec's milestone.
 
-By default these are GitHub issues and milestones. A team that keeps its work in Linear, Jira or another tracker sets `"store": "tracker"` and describes in one paragraph how each artifact maps onto it. Maestro then uses that tracker's MCP server. Pull requests and the review stay on GitHub either way.
+By default these are GitHub issues and milestones. A team that keeps its work in Linear, Jira or another tracker sets `"store": "tracker"` and describes in one paragraph how each artifact maps onto it. Maestro then uses that tracker's MCP server. A team that wants neither sets `"store": "files"`: each artifact is then a markdown file, linked to its parent, in `.maestro/work/` or in your private folder. Pull requests and the review stay on GitHub in every case.
 
 | Command                     | What it does                                                              | How it works                                          |
 | --------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------- |

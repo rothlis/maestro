@@ -54,6 +54,7 @@ test("a private config sits in the home folder, and its paths are relative to it
   assert.equal(config.method, "shape-up")
   assert.equal(config.memoryDir, join(home, "acme/shop/memory"))
   assert.equal(config.blueprintMap, join(home, "acme/shop/blueprints/map.json"))
+  assert.equal(config.workDir, join(home, "acme/shop/work"))
 })
 
 test("a private config can point at a shared folder with ~", (t) => {

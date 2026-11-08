@@ -13,7 +13,8 @@ Maestro runs the work once the team has decided to build something. **Your brief
 argument, and the store holds the work.** A brief is any PRD, RFC or doc that says why, in any
 tool. A project needs none.
 
-A project is a tree of artifacts in a store: GitHub Issues by default, or the team's tracker.
+A project is a tree of artifacts in a store: GitHub Issues by default, the team's tracker, or
+markdown files.
 An agent keeps that tree current, so the person who picks a project up finds its research, its
 requirements and its open tasks in one place, and finds them true.
 
@@ -56,6 +57,7 @@ memory.
 | `method`                | `default`                            | `init`, `spec`, `sync`, see Methods        |
 | `store`                 | `github`                             | every mode that touches an artifact, see Stores |
 | `tracker.instructions`  | none: the mode asks once             | every mode, when `store` is `tracker`      |
+| `workDir`               | `.maestro/work`, or `work` for `me`  | every mode, when `store` is `files`        |
 | `announce.chat`         | `slack`; `teams` for Microsoft Teams | `announce`, see [references/chats/](references/chats/slack.md) |
 | `announce.channel`      | none: `announce` asks for a channel  | `announce`                                 |
 | `board.instructions`    | none: `sync` writes the project only | `sync`                                     |
@@ -117,6 +119,7 @@ default is `github`. Pull requests and the review stay on GitHub with every stor
 | --------- | ------------------------------------------------------------ | --------------------------------------------------------- |
 | `github`  | [references/stores/github.md](references/stores/github.md)   | labelled issues, sub-issues and milestones                |
 | `tracker` | [references/stores/tracker.md](references/stores/tracker.md) | what `tracker.instructions` maps, through the tracker's MCP |
+| `files`   | [references/stores/files.md](references/stores/files.md)     | markdown files in `workDir`, one for each artifact, linked by `parent` |
 
 **A mode names an operation, and the store file runs it.** Every mode that touches an artifact
 reads `references/stores/<store>.md`, and uses these operations, in bold, and no other:
@@ -130,6 +133,7 @@ reads `references/stores/<store>.md`, and uses these operations, in bold, and no
 | **replace body**  | Replace the whole body, then read it back and compare                                |
 | **children**      | List an artifact's children, with the kind and the status of each                    |
 | **milestones**    | List or create the project's milestones, and set an artifact's milestone             |
+| **assign**        | Set who owns an artifact, by GitHub login                                            |
 | **close**         | Mark an artifact done                                                                |
 | **link PR**       | The line a pull request body carries so that merging it closes the task, and how to find the task from a pull request |
 

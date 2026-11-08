@@ -83,7 +83,7 @@ integer. `-f` sends a string, and the API answers `422 ... is not of type intege
 ## read
 
 ```bash
-gh issue view <n> --json number,title,body,state,labels,milestone,url
+gh issue view <n> --json number,title,body,state,labels,milestone,assignees,url
 gh api repos/{owner}/{repo}/issues/<n>/parent --jq .number
 ```
 
@@ -150,6 +150,14 @@ gh issue edit <n> --milestone "<project-slug>/<milestone-name>"
 ```
 
 On a new issue, pass `--milestone` to **create**.
+
+## assign
+
+```bash
+gh issue edit <n> --add-assignee <login>
+```
+
+Use `@me` for the user who runs the mode. **read** gives the assignees in `assignees`.
 
 ## close
 

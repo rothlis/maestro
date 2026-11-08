@@ -52,7 +52,9 @@ recommended option. Wait for each answer before you ask the next question, becau
 can change the question after it.
 
 1. **Method.** `default`, or `shape-up`.
-2. **Store.** `github`, or `tracker`. If the answer is `tracker`:
+2. **Store.** `github`, `tracker`, or `files`. With `files`, each artifact is a markdown file
+   in `workDir`: `.maestro/work` for the team, or `work` in the private folder for only me.
+   It needs no label and no MCP. If the answer is `tracker`:
    - Ask for the mapping, as one paragraph of free text: which MCP, and how each artifact
      maps. Show the example in [../references/stores/tracker.md](../references/stores/tracker.md).
    - Search with `ToolSearch` for the tracker's name, and make sure that its MCP tools exist.

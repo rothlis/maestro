@@ -44,7 +44,12 @@ default, and a missing file means every default. The defaults below are the team
 ### 1. Take a task
 
 Read the task reference from the argument. With no argument, walk down the project with
-**children**: its specs, then the open tasks of each spec. Ask which one.
+**children**: its specs, then the open tasks of each spec, with the assignee of each. Ask
+which one.
+
+**Then assign the task to the user**, with **assign**. If it is already assigned to somebody
+else, ask before you take it over. When the store's **link PR** says that merging closes
+nothing, close first each open task of the spec whose pull request merged.
 
 **One build is one task.**
 

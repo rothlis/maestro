@@ -37,6 +37,7 @@ Run this once per session, before the first other operation.
      body line `Parent: <ref>`;
    - what a milestone is, or that the tracker has none;
    - which statuses mean done;
+   - which field holds the assignee, and how a GitHub login maps to a tracker user;
    - the **link PR** text, and whether merging a pull request closes the task.
 3. **Confirm the mapping with the user the first time**: show each operation with the tool
    and the object it uses, and ask with `AskUserQuestion`. When the user corrects it, offer to
@@ -66,7 +67,7 @@ Return its reference.
 
 ## read
 
-Read the artifact's title, body, status and parent. Map the status to `open` or `done` with
+Read the artifact's title, body, status, parent and assignee. Map the status to `open` or `done` with
 the done statuses of the mapping. Map the parent from the stated link.
 
 ## replace body
@@ -108,6 +109,11 @@ fix version.
 
 When the mapping says the tracker has no milestones, say so, and treat each artifact as having
 none. Do not invent a label or a field to stand in for one.
+
+## assign
+
+Set the assignee field that the mapping names. Find the tracker user from the GitHub login, by
+the email or the name. **If the search does not return exactly one user, ask.** Never guess.
 
 ## close
 

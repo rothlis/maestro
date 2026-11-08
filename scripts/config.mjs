@@ -7,7 +7,7 @@
  *   `origin` remote, so every clone and worktree of one repository shares it.
  *
  * The team file wins. Without either file, every field takes its default (scope `none`).
- * `memoryDir` and `blueprintMap` come back absolute: a relative path is relative to the
+ * `memoryDir`, `blueprintMap` and `workDir` come back absolute: a relative path is relative to the
  * repository root for `team` and `none`, and to the private folder for `me`, and `~` is the
  * home directory. A key that starts with `$` is documentation and never a setting.
  * `branchPattern` and `tracker` have no default.
@@ -27,6 +27,7 @@ export const DEFAULTS = {
   baseBranch: "main",
   memoryDir: ".maestro/memory",
   blueprintMap: ".maestro/blueprints/map.json",
+  workDir: ".maestro/work",
   prTemplate: ".github/pull_request_template.md",
   method: "default",
   store: "github",
@@ -35,6 +36,7 @@ export const DEFAULTS = {
 const PRIVATE_DEFAULTS = {
   memoryDir: "memory",
   blueprintMap: "blueprints/map.json",
+  workDir: "work",
 }
 
 /** The root of the worktree, or `cwd` outside a git repository. */
@@ -106,6 +108,7 @@ export function readConfig(root = gitRoot()) {
     configPath: found.path,
     memoryDir: resolve(found.base, expandHome(merged.memoryDir)),
     blueprintMap: resolve(found.base, expandHome(merged.blueprintMap)),
+    workDir: resolve(found.base, expandHome(merged.workDir)),
   }
 }
 

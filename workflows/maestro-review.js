@@ -3,7 +3,7 @@ export const meta = {
   description:
     "Review a pull request against the team's own blueprints — the single source of the review's passes, engines and criteria injection",
   whenToUse:
-    "Every maestro review runs through this script; the /maestro:maestro review skill is a front door onto it. Pass args.pluginRoot, the absolute path of the plugin, args.blueprintMap, the absolute path of the map, and args.store with args.trackerInstructions when the artifacts live in a tracker. `node <pluginRoot>/scripts/config.mjs` prints all of them. Call it as a phase of larger work with workflow('maestro:maestro-review', { pluginRoot, scope, base, effort }), or launch it directly. Subagents cannot nest, so an agent that has neither the Workflow tool nor the Agent tool must hand the review back to its caller instead of reviewing in one context. Never resume a run: a failed pass has no cached result, so a resume re-runs it and every agent after it.",
+    "Every maestro review runs through this script; the /maestro:maestro review skill is a front door onto it. Pass args.pluginRoot, the absolute path of the plugin, args.blueprintMap, the absolute path of the map, and args.store, with args.trackerInstructions for a tracker or args.workDir for files. `node <pluginRoot>/scripts/config.mjs` prints all of them. Call it as a phase of larger work with workflow('maestro:maestro-review', { pluginRoot, scope, base, effort }), or launch it directly. Subagents cannot nest, so an agent that has neither the Workflow tool nor the Agent tool must hand the review back to its caller instead of reviewing in one context. Never resume a run: a failed pass has no cached result, so a resume re-runs it and every agent after it.",
   phases: [
     {
       title: "Route",
@@ -68,12 +68,14 @@ const prBase = scopeArg.prBase || base;
 // The store holds the task and spec artifacts; pull requests stay on GitHub either way. The caller
 // reads `store` and `tracker.instructions` from the config.
 const STORE = scopeArg.store || "github";
-if (!["github", "tracker"].includes(STORE)) {
+if (!["github", "tracker", "files"].includes(STORE)) {
   throw new Error(
-    `maestro-review: args.store is "${STORE}", and it must be "github" or "tracker". Fix \`store\` in the Maestro config. No review ran.`,
+    `maestro-review: args.store is "${STORE}", and it must be "github", "tracker" or "files". Fix \`store\` in the Maestro config. No review ran.`,
   );
 }
 const TRACKER_INSTRUCTIONS = (scopeArg.trackerInstructions || "").trim();
+// With the files store, the task and spec files sit in this folder, often outside the repository.
+const WORK_DIR = (scopeArg.workDir || "").replace(/\/+$/, "");
 // A re-check reads only the changes since the last reviewed head.
 const isRecheck = scopeArg.recheck === true;
 const raisedFindingsPath = scopeArg.raisedFindings;
@@ -459,7 +461,9 @@ phase("Scope");
 const taskRefsRule =
   STORE === "github"
     ? "taskRefs: the issues the pull request closes, each written as `#<n>`. Run `gh pr view --json closingIssuesReferences,body` and take them from `closingIssuesReferences`, or from the `Closes #<n>` lines of the body when that list is empty, because GitHub links them a few minutes late. Give an empty list when the branch has no pull request, or when its body has no such line."
-    : `taskRefs: every task reference the pull request carries, by the tracker's link PR rule, each written as the tracker writes it (such as \`ENG-123\`). Run \`gh pr view --json body,headRefName\` and \`git rev-parse --abbrev-ref HEAD\`. Take each reference from the lines of the body that the rule names, and from the branch name when it carries one: \`eng-123-add-banner\` gives \`ENG-123\`. ${TRACKER_INSTRUCTIONS ? `The tracker instructions state the rule:\n\n${TRACKER_INSTRUCTIONS}\n` : "No tracker instructions were given, so take references of the form `ABC-123` from the `Fixes`, `Closes` and `Resolves` lines of the body and from the branch name."} Do not call the tracker: read only the pull request and the branch. Give an empty list when neither carries a reference.`;
+    : STORE === "files"
+      ? "taskRefs: every reference on a `Maestro-Task: <ref>` line of the pull request body, written as it is there (such as `export-csv#3`). Run `gh pr view --json body`. Give an empty list when the branch has no pull request, or when its body has no such line."
+      : `taskRefs: every task reference the pull request carries, by the tracker's link PR rule, each written as the tracker writes it (such as \`ENG-123\`). Run \`gh pr view --json body,headRefName\` and \`git rev-parse --abbrev-ref HEAD\`. Take each reference from the lines of the body that the rule names, and from the branch name when it carries one: \`eng-123-add-banner\` gives \`ENG-123\`. ${TRACKER_INSTRUCTIONS ? `The tracker instructions state the rule:\n\n${TRACKER_INSTRUCTIONS}\n` : "No tracker instructions were given, so take references of the form `ABC-123` from the `Fixes`, `Closes` and `Resolves` lines of the body and from the branch name."} Do not call the tracker: read only the pull request and the branch. Give an empty list when neither carries a reference.`;
 
 const scope = await withOneRetry("scope:diff", () =>
   agent(
@@ -760,9 +764,16 @@ const specSkip =
         note:
           STORE === "github"
             ? "The scope step resolved no task reference: the branch has no pull request, or its body has no `Closes #<n>` line. The spec pass did not start."
-            : "The scope step resolved no task reference: neither the pull request body nor the branch name carries one by the tracker's link PR rule. The spec pass did not start.",
+            : STORE === "files"
+              ? "The scope step resolved no task reference: the pull request body has no `Maestro-Task:` line. The spec pass did not start."
+              : "The scope step resolved no task reference: neither the pull request body nor the branch name carries one by the tracker's link PR rule. The spec pass did not start.",
       }
-    : STORE === "tracker" && !TRACKER_INSTRUCTIONS
+    : STORE === "files" && !WORK_DIR
+      ? {
+          short: "the store is files, and no work folder was given",
+          note: `The store is files, and no args.workDir was given, so the spec pass cannot find ${scope.taskRefs.join(", ")}. Pass the workDir that scripts/config.mjs prints. The spec pass did not start.`,
+        }
+      : STORE === "tracker" && !TRACKER_INSTRUCTIONS
       ? {
           short: "the store is tracker, and no tracker instructions were given",
           note: `The store is tracker, and no tracker instructions were given, so the spec pass cannot tell which MCP holds ${scope.taskRefs.join(", ")} and its spec. Set \`tracker.instructions\` in the Maestro config. The spec pass did not start.`,
@@ -782,7 +793,15 @@ gh issue view <spec> --json body
 **An empty \`closingIssuesReferences\` on a recent pull request means "not yet", and not "none".** GitHub does not create that link synchronously, and it can take several minutes. Before you conclude the branch resolves to nothing, read the pull request body yourself and take the \`Closes #<n>\` line from it. Only a body with no such line puts the branch outside the flow.
 
 The pull request closes one or more task issues, which carry the \`maestro:task\` label. Each task issue names its spec and its requirement ids in the first line of its body, in its \`**Spec**\` and \`**Requirements**\` fields. Read the spec issue, and read **only those requirements**, including the acceptance criteria and the notes inside their \`<details>\` blocks.`
-    : `The scope step found these task references: ${scope.taskRefs.join(", ")}. The task and its spec live in a tracker, and the pull request stays on GitHub. These tracker instructions say which MCP holds them and how each artifact maps:
+    : STORE === "files"
+      ? `The scope step found these task references: ${scope.taskRefs.join(", ")}. The task and its spec are markdown files in \`${WORK_DIR}\`, and the pull request stays on GitHub. Resolve the branch to its requirements. The chain is mechanical, so do not guess at any step:
+
+1. For each reference \`<project>#<n>\`, read the file \`${WORK_DIR}/<project>/<n>-*.md\`. Its frontmatter gives the kind, which must be \`task\`, and the \`parent\`.
+2. Find its spec. The first line of the task body names it in its \`**Spec**\` field. When the body has no such field, take the spec from the \`parent\` reference, and read its file the same way.
+3. Read the spec, and read **only the requirements** that the task names in its \`**Requirements**\` field, including the acceptance criteria and the notes inside their \`<details>\` blocks.
+
+**Read only. Never write a file in that folder.**`
+      : `The scope step found these task references: ${scope.taskRefs.join(", ")}. The task and its spec live in a tracker, and the pull request stays on GitHub. These tracker instructions say which MCP holds them and how each artifact maps:
 
 ${TRACKER_INSTRUCTIONS}
 
@@ -798,7 +817,9 @@ Resolve the branch to its requirements with that tracker's MCP tools. The chain 
 const specUnresolved =
   STORE === "github"
     ? "no pull request yet, no `Closes` line, a closed issue without the `maestro:task` label, or a task issue that names none"
-    : "no tracker tool found because the tracker's MCP is not connected in this session, a reference the tracker does not know, a task with no spec, or a task that names no requirement";
+    : STORE === "files"
+      ? "no `Maestro-Task:` line in the pull request body, a reference with no file in the work folder, a file whose kind is not task, a task with no spec, or a task that names no requirement"
+      : "no tracker tool found because the tracker's MCP is not connected in this session, a reference the tracker does not know, a task with no spec, or a task that names no requirement";
 
 if (!specSkip) {
   passes.push({

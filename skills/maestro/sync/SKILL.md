@@ -140,7 +140,11 @@ EXP-REQ-8 to EXP-REQ-9 · 0 of 0 tasks closed · 2 open questions
 **Mark a task by its state, so the line and the counts agree.** `[x]` for a closed task,
 `[~]` for one carrying a pull request, `[ ]` for one not started. **Name the pull request's
 state on the line** — `ready for review` or `draft` — because a reader cannot otherwise reach
-the count.
+the count. **End the line of an open task with its assignee**, as `· @login`, so a reader
+sees who holds it.
+
+When the store's **link PR** says that merging closes nothing, **close** each open task whose
+pull request merged, before you count, and name it in the report.
 
 **End the section with that comment.** A person who opens the body to type inside the section
 is the one who needs the warning, and the section is where they are standing. It does not
