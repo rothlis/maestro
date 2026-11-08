@@ -21,6 +21,9 @@ the config holds `board.instructions`, sync also pushes the same counts through
 what those instructions describe: an MCP tool, a `gh project` command, or anything else.
 Without that field, or with an empty one, the project is the only target.
 
+**Sync never touches the `## Context` section or the `## Changes` log.** People, `init`,
+`research` and `spec` own those.
+
 **Sync owns its section and regenerates it whole.** Anything a person types inside it is
 replaced on the next run. That is why sync writes each count with the tasks behind it: the
 section has to stay readable without a human writing it. Put commentary that must survive in

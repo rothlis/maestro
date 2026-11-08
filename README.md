@@ -9,7 +9,7 @@ It works with any method. Teams that use [Shape Up](https://basecamp.com/shapeup
 A project becomes a tree, by default of labelled GitHub issues:
 
 ```
-Project issue        maestro:project    links to the brief, and a progress section
+Project issue        maestro:project    what it is about, what changed, and progress
 ├── Research issue   maestro:research   what was unknown before the work
 ├── Spec issue       maestro:spec       the requirements, one section each
 │   └── Task issue   maestro:task       the unit one pull request closes
@@ -17,6 +17,8 @@ Project issue        maestro:project    links to the brief, and a progress secti
 ```
 
 A spec can belong to a milestone, which is a stage of the project, such as a phase or a release, and its tasks carry the spec's milestone.
+
+The project keeps its own context: the problem, the outcome, the decisions already taken, the limits and the open questions, from the text you paste or the brief you link. Research and spec keep that context true as the team learns, and log each change with its date and its reason. Maestro asks you before it changes a decision or a limit.
 
 By default these are GitHub issues and milestones. A team that keeps its work in Linear, Jira or another tracker sets `"store": "tracker"` and describes in one paragraph how each artifact maps onto it. Maestro then uses that tracker's MCP server. A team that wants neither sets `"store": "files"`: each artifact is then a markdown file, linked to its parent, in `.maestro/work/` or in your private folder. Pull requests and the review stay on GitHub in every case.
 

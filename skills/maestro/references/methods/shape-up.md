@@ -28,6 +28,10 @@ not bet.
 
 ## init
 
+**Context reads the shaped pitch.** Fill **Problem** from its problem, **Limits** from its
+appetite and its no-gos, and **Open questions** from its rabbit holes. The labels stay the
+core ones, because every mode reads them by name.
+
 **One milestone per scope.** The scopes come from shaping. Read their names from the shaped
 pitch, or ask the user, and create one milestone (store operation) for each, named for
 the scope. Write the names only: a scope's description stays in the shape.

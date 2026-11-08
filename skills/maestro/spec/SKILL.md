@@ -336,6 +336,14 @@ a reason. **Replace body** of the spec as each one is settled.
 A deferred question is acceptable. An unaddressed one is not. Do not propose going to build
 while a question blocks a requirement.
 
+### 9. Keep the project context current
+
+Read the project again, then apply "The project context" in [../SKILL.md](../SKILL.md). A spec
+often moves a scope line: something goes under **Out of scope**, or a decision answers an
+open question of the project. Update Context, ask first for a decision or a limit, and write
+one line in Changes that names this spec. Do the same when an iteration below changes the
+goal. If nothing changed at the project level, write nothing.
+
 ## Iterating on a spec
 
 A spec is a living artifact.

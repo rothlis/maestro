@@ -286,6 +286,30 @@ report success and leave the body empty, unchanged or wrong, and no store says s
 edit only after the read-back matches. The store file gives the commands and the traps of its
 store, under **create** and **replace body**.
 
+### The project context
+
+The project body holds a `## Context` section and a `## Changes` log, above the progress
+section. `init` writes them first. These rules hold for every mode that touches them:
+
+- **Context is the current truth, and Changes is the history.** When the work changes what the
+  project is (the problem, the scope, a decision, an answered question), edit Context so that
+  it reads true today, then add one line to Changes:
+  `- <YYYY-MM-DD>: <what changed>, because <why>. <ref of the artifact that showed it>`.
+- **`research` and `spec` keep it current**, at the end of their run. They update
+  **Problem**, **Outcome** and **Open questions** themselves, and say so in their report.
+- **A decision is a person's.** Ask with `AskUserQuestion` before you change a line under
+  **Decided** or **Limits**, and quote the old line and the new one.
+- **With a brief link, the brief wins.** Context is then its summary. When the two disagree,
+  say so to the user, and change neither until they choose.
+- **`sync` never touches Context or Changes.** It owns only the progress section.
+- Edit with **replace body**, and keep every other part of the body byte for byte.
+
+### Words
+
+**Write the method's words in every artifact**, in titles, bodies and reports, even when the
+user's pasted text uses others: `project` and `milestone` by default, and the words of the
+preset when `method` names one. In the conversation, you can mirror the user's words.
+
 ### The open-questions gate
 
 An artifact with unresolved open questions blocks the work that depends on them.

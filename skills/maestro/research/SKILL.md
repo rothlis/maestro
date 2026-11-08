@@ -165,6 +165,14 @@ with a reason. **Replace body** of the research as each one is settled.
 A deferred question is acceptable, because the team then chose to go on with the uncertainty.
 An unaddressed one is not.
 
+### 10. Keep the project context current
+
+Read the project again, then apply "The project context" in [../SKILL.md](../SKILL.md). Most
+research changes **Open questions**: strike the ones it answered and add the ones it found. If
+it shows that the problem, the outcome, a decision or a limit is not what Context says, update
+it, and ask first for a decision or a limit. Write one line in Changes that names this
+research. If nothing changed, write nothing.
+
 ## What research does not do
 
 - It writes no file. The output is the research artifact.
